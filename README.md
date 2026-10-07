@@ -2,6 +2,12 @@
 
 A PayPal sandbox and AI integration candidate for the PayPal AI Hackathon.
 
+## Live demo
+
+https://velqiris-acquisition.netlify.app/paypal-sandbox.html
+
+The public endpoint currently reports `configured: false` and creates no order until PayPal Sandbox credentials are added to Netlify.
+
 ## Implemented locally
 
 - PayPal sandbox OAuth and order creation/capture client.
