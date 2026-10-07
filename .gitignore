@@ -1,0 +1,4 @@
+.env
+__pycache__/
+*.pyc
+paypal_verified_execution_proof.json
