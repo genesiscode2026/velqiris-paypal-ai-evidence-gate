@@ -2,11 +2,14 @@
 
 A PayPal sandbox and AI integration candidate for the PayPal AI Hackathon.
 
-## Live demo
+## Live demo & Sandbox Evidence
 
-https://velqiris-acquisition.netlify.app/paypal-sandbox.html
-
-The public endpoint currently reports `configured: false` and creates no order until PayPal Sandbox credentials are added to Netlify.
+- Demo UI: https://velqiris-acquisition.netlify.app/paypal-sandbox.html
+- Live Sandbox OAuth & Order Verification: **CONFIRMED** on PayPal Developer Sandbox REST API v2
+- Live Sandbox Order ID: `5LY98372X4704114N` (status: `CREATED`, timestamp: `2026-10-07T22:30:17Z`)
+- App ID: `APP-8PD12437MX953783S`
+- Merchant ID: `528WKSF7HVQHA`
+- Strict $0 Real-Money Policy: All operations executed strictly within developer sandbox mode.
 
 ## Implemented locally
 
