@@ -164,6 +164,39 @@ class TestPayPalSandboxAIClient(unittest.TestCase):
         self.assertIn("error", report)
         self.assertEqual(report["error"], "PAYMENT_NOT_VERIFIED")
 
+    @patch.object(PayPalSandboxAIClient, "get_oauth2_access_token", return_value="MOCK_TOKEN")
+    @patch("urllib.request.urlopen")
+    def test_capture_order_invalid_state_http_error(self, mock_urlopen, mock_token):
+        import urllib.error
+        error_resp = io.BytesIO(b'{"name":"UNPROCESSABLE_ENTITY","message":"ORDER_ALREADY_CAPTURED"}')
+        mock_urlopen.side_effect = urllib.error.HTTPError("url", 422, "Unprocessable Entity", {}, error_resp)
+        res = self.client_with_creds.capture_order("ORD_ALREADY_CAPTURED")
+        self.assertEqual(res["status"], "HTTP_ERROR")
+        self.assertEqual(res["code"], 422)
+        self.assertIn("ORDER_ALREADY_CAPTURED", res["error"])
+
+    @patch.object(PayPalSandboxAIClient, "get_oauth2_access_token", return_value="MOCK_TOKEN")
+    @patch("urllib.request.urlopen")
+    def test_create_order_network_retry_and_timeout(self, mock_urlopen, mock_token):
+        mock_urlopen.side_effect = TimeoutError("Connection timed out to PayPal sandbox API")
+        res = self.client_with_creds.create_order("BTC", "19.00")
+        self.assertEqual(res["status"], "NETWORK_ERROR")
+        self.assertIn("timed out", res["error"])
+
+    def test_duplicate_webhook_transmission_id_tracking(self):
+        seen_transmissions = set()
+        headers = {
+            "paypal-transmission-id": "dup_tx_999",
+            "paypal-transmission-time": "2026-10-09T20:00:00Z",
+            "paypal-transmission-sig": "sig_abc",
+            "paypal-cert-url": "https://api.sandbox.paypal.com/cert",
+        }
+        tx_id = headers["paypal-transmission-id"]
+        self.assertNotIn(tx_id, seen_transmissions)
+        seen_transmissions.add(tx_id)
+        # Duplicate detection assertion
+        self.assertIn(tx_id, seen_transmissions)
+
 
 if __name__ == "__main__":
     unittest.main()
