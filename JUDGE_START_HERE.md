@@ -28,7 +28,7 @@ VELQIRIS solves this by enforcing a 5-layer non-bypassable architecture:
 ./velqiris_services.sh start
 
 # 2. Run the automated Mathematical Test Audit:
-node ../../scripts/audit_test_suite.js
+node scripts/audit_test_suite.js
 ```
 
 ### Complete Test Matrix (98 Unique Tests Declared, 94 PASS, 4 SKIPPED, 0 FAIL):

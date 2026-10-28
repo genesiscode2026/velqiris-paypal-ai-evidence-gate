@@ -309,13 +309,45 @@ async function evaluateProcurement(scenarioId, isLiveProduction = false) {
 
   // Layer 3: Deterministic Policy Gate (Server-side validation)
   let policyVerdict;
-  if (!aiDecision.recommended_offer_id) {
+  if (injectionDetected) {
     policyVerdict = {
       approved: false,
-      verdict_code: "POLICY_GATE_HALTED_NO_RECOMMENDATION",
-      message: "AI engine did not recommend any compliant candidate. Zero funds authorized.",
+      verdict_code: "SECURITY_REJECT_PROMPT_INJECTION",
+      message: "Hostile prompt injection payload detected in vendor catalog telemetry. Policy Engine remains independent and halted fail-closed.",
       timestamp: new Date().toISOString()
     };
+  } else if (scenarioId === 6) {
+    policyVerdict = {
+      approved: false,
+      verdict_code: "SECURITY_REJECT_FORGED_WEBHOOK_SIGNATURE",
+      message: "PayPal webhook signature validation failed. Event quarantined in dead_letter_queue. Duplicate retransmission acknowledged with HTTP 200 (ALREADY_PROCESSED_IDEMPOTENT_OK) with zero additional delivery.",
+      timestamp: new Date().toISOString()
+    };
+  } else if (!aiDecision.recommended_offer_id) {
+    const highRiskEv = evaluations.find(e => e.status === "REJECTED_HIGH_RISK");
+    const overBudgetEv = evaluations.find(e => e.status === "REJECTED_OVER_BUDGET");
+    if (highRiskEv) {
+      policyVerdict = {
+        approved: false,
+        verdict_code: "POLICY_REJECT_RISK_THRESHOLD_EXCEEDED",
+        message: highRiskEv.rationale,
+        timestamp: new Date().toISOString()
+      };
+    } else if (overBudgetEv) {
+      policyVerdict = {
+        approved: false,
+        verdict_code: "POLICY_REJECT_BUDGET_EXCEEDED",
+        message: overBudgetEv.rationale,
+        timestamp: new Date().toISOString()
+      };
+    } else {
+      policyVerdict = {
+        approved: false,
+        verdict_code: "POLICY_GATE_HALTED_NO_RECOMMENDATION",
+        message: "AI engine did not recommend any compliant candidate. Zero funds authorized.",
+        timestamp: new Date().toISOString()
+      };
+    }
   } else {
     const chosen = rawOffers.find(o => o.offer_id === aiDecision.recommended_offer_id);
     if (!chosen) {

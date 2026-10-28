@@ -502,10 +502,43 @@ class PolicyEnforcementEngine:
         Audits AI recommendation against deterministic institutional policy.
         Returns PolicyVerdict: APPROVED or REJECTED with specific violation codes.
         """
+        # 0. Prompt injection defense gate
+        if ai_decision.get("injection_detected"):
+            return {
+                "approved": False,
+                "verdict_code": "SECURITY_REJECT_PROMPT_INJECTION",
+                "message": "Hostile prompt injection payload detected in vendor catalog telemetry. Policy Engine remains independent and halted fail-closed.",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+
         rec_id = ai_decision.get("recommended_offer_id")
         rec_price = float(ai_decision.get("recommended_price_usd", 0.0))
 
-        if not rec_id or rec_id not in raw_offers_by_id:
+        if not rec_id:
+            evals = ai_decision.get("evaluations", [])
+            for ev in evals:
+                if ev.get("status") == "REJECTED_HIGH_RISK":
+                    return {
+                        "approved": False,
+                        "verdict_code": "POLICY_REJECT_RISK_THRESHOLD_EXCEEDED",
+                        "message": ev.get("rationale", "Risk threshold exceeded."),
+                        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    }
+                if ev.get("status") == "REJECTED_OVER_BUDGET":
+                    return {
+                        "approved": False,
+                        "verdict_code": "POLICY_REJECT_BUDGET_EXCEEDED",
+                        "message": ev.get("rationale", "Budget limit exceeded."),
+                        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    }
+            return {
+                "approved": False,
+                "verdict_code": "POLICY_GATE_HALTED_NO_RECOMMENDATION",
+                "message": "AI engine did not recommend any compliant candidate. Zero funds authorized.",
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+
+        if rec_id not in raw_offers_by_id:
             return {
                 "approved": False,
                 "verdict_code": "POLICY_REJECT_INVALID_OFFER_ID",

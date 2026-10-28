@@ -225,7 +225,7 @@ test("TEST 9: Oferta ce depășește bugetul ($29.00 > $25.00) este respinsă de
   const result = await evaluateProcurement(3);
   assert.equal(result.ai_decision.status, "ALL_OFFERS_REJECTED");
   assert.equal(result.policy_verdict.approved, false);
-  assert.equal(result.policy_verdict.verdict_code, "POLICY_GATE_HALTED_NO_RECOMMENDATION");
+  assert.equal(result.policy_verdict.verdict_code, "POLICY_REJECT_BUDGET_EXCEEDED");
 });
 
 // ==============================================================================

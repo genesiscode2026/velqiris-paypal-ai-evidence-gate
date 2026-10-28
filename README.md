@@ -75,7 +75,7 @@ python3 -m unittest discover -s . -p "test_*.py"
 
 ### Automated Mathematical Test Audit:
 ```bash
-node ../../scripts/audit_test_suite.js
+node scripts/audit_test_suite.js
 ```
 **Results:** **98 Unique Tests Declared · 94 PASS · 4 SKIPPED (Sandbox loopback policy) · 0 FAIL (100% GREEN).**
 
