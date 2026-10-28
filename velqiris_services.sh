@@ -6,8 +6,14 @@
 
 set -e
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PID_DIR="$DIR/.service_pids"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -d "$SCRIPT_DIR/competition_submissions/paypal_ai" ]; then
+  BASE_DIR="$SCRIPT_DIR/competition_submissions/paypal_ai"
+else
+  BASE_DIR="$SCRIPT_DIR"
+fi
+
+PID_DIR="$BASE_DIR/.service_pids"
 mkdir -p "$PID_DIR"
 
 RECONCILER_PID_FILE="$PID_DIR/reconciler.pid"
@@ -25,7 +31,7 @@ cmd_start() {
   if [ -x "$DOCKER_BIN" ]; then
     echo "[*] Ensuring PostgreSQL container 'velqiris-postgres' is active..."
     if ! "$DOCKER_BIN" ps --filter "name=velqiris-postgres" --format '{{.Names}}' | grep -q "velqiris-postgres"; then
-      "$DOCKER_BIN" compose -f "$DIR/docker-compose.yml" up -d
+      "$DOCKER_BIN" compose -f "$BASE_DIR/docker-compose.yml" up -d
     else
       echo "[+] Container 'velqiris-postgres' is already running."
     fi
@@ -35,7 +41,7 @@ cmd_start() {
 
   # 2. Wait for PostgreSQL readiness
   echo "[*] Verifying PostgreSQL connection..."
-  node -e '
+  NODE_PATH="$BASE_DIR/node_modules:$BASE_DIR/../node_modules" node -e '
     const { Pool } = require("pg");
     const pool = new Pool({ connectionString: "postgresql://velqiris_admin:velqiris_test_password_2026@127.0.0.1:5432/velqiris_test_db" });
     pool.query("SELECT 1").then(() => { console.log("[+] PostgreSQL is ready."); pool.end(); process.exit(0); })
@@ -47,7 +53,7 @@ cmd_start() {
     echo "[+] Local Reconciler already running with PID $(cat "$RECONCILER_PID_FILE")."
   else
     echo "[*] Starting Local Reconciler Daemon..."
-    NODE_ENV=production node "$DIR/competition_submissions/paypal_ai/local-reconciler.js" >> "$DIR/reconciler.log" 2>&1 &
+    NODE_PATH="$BASE_DIR/node_modules:$BASE_DIR/../node_modules" NODE_ENV=production node "$BASE_DIR/local-reconciler.js" >> "$BASE_DIR/reconciler.log" 2>&1 &
     echo $! > "$RECONCILER_PID_FILE"
     echo "[+] Local Reconciler started with PID $(cat "$RECONCILER_PID_FILE")."
   fi
@@ -57,7 +63,7 @@ cmd_start() {
     echo "[+] Local API server already running with PID $(cat "$SERVER_PID_FILE")."
   else
     echo "[*] Starting Local API Server (port 8080)..."
-    python3 "$DIR/competition_submissions/paypal_ai/serve_local_api.py" >> "$DIR/server.log" 2>&1 &
+    python3 "$BASE_DIR/serve_local_api.py" >> "$BASE_DIR/server.log" 2>&1 &
     echo $! > "$SERVER_PID_FILE"
     echo "[+] Local API Server started with PID $(cat "$SERVER_PID_FILE")."
   fi
@@ -96,7 +102,7 @@ cmd_health() {
 
   # PostgreSQL Check
   PG_STATUS="UNHEALTHY"
-  if node -e '
+  if NODE_PATH="$BASE_DIR/node_modules:$BASE_DIR/../node_modules" node -e '
     const { Pool } = require("pg");
     const pool = new Pool({ connectionString: "postgresql://velqiris_admin:velqiris_test_password_2026@127.0.0.1:5432/velqiris_test_db" });
     pool.query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = \x27public\x27")
@@ -123,7 +129,7 @@ cmd_health() {
 
 cmd_test() {
   echo "=== [VELQIRIS] Executing Essential Verification Tests ==="
-  node --test "$DIR/competition_submissions/paypal_ai/test/postgres-real-integration.test.js"
+  NODE_PATH="$BASE_DIR/node_modules:$BASE_DIR/../node_modules" node "$BASE_DIR/scripts/audit_test_suite.js"
 }
 
 case "$1" in
