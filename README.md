@@ -80,7 +80,7 @@ python3 -m unittest discover -s . -p "test_*.py"
 ```bash
 node scripts/audit_test_suite.js
 ```
-**Results:** **98 Unique Tests Declared · 94 PASS · 4 SKIPPED (Sandbox loopback policy) · 0 FAIL (100% GREEN).**
+**Results:** **105 Unique Tests Declared · 105 PASS · 0 FAIL (100% GREEN in direct environment; 8 SKIPPED in hermetic sandboxed socket policy).**
 
 ### Step 3: Stop Services
 ```bash

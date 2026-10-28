@@ -38,7 +38,7 @@ All operations strictly execute in Developer Sandbox mode ($0 real money):
   - Order `9XA64288V69271501` (status: `CREATED`, value: `$19.00 USD`)
   - Order `25L40064784857115` (status: `CREATED`, value: `$1.00 USD`)
   - Order `5LY98372X4704114N` (status: `CREATED`, value: `$1.00 USD`)
-- **Recorded Execution Proof:** [`competition_submissions/paypal_ai/paypal_verified_execution_proof.json`](file://./competition_submissions/paypal_ai/paypal_verified_execution_proof.json)
+- **Recorded Execution Proof:** Recorded in [`RELEASE_MANIFEST_P0.json`](./RELEASE_MANIFEST_P0.json) and [`PAYPAL_SANDBOX_VERIFICATION.md`](./PAYPAL_SANDBOX_VERIFICATION.md)
 
 ---
 
@@ -83,32 +83,26 @@ tests 3 | pass 3 | fail 0 (3/3 PASS)
 
 ## 4. DEDICATED WORKING DEMO VIDEO
 
-- **File Path:** [`./velqiris_paypal_demo.mp4`](file://./velqiris_paypal_demo.mp4)
-- **Duration:** 96.56 seconds (1.61 minutes) — strictly complies with the < 3:00 minute rule.
-- **Resolution & Encoding:** 1920x1080 (1080p), 30 fps, H.264 Video / AAC Audio.
-- **File Size:** 3.79 MB.
-- **SHA-256 Checksum:** `6c94e5c4797d8242b4cd353558347b23aedf0e2d12530e81dc7e9eece084d6e7`.
-- **Narration:** Studio-grade macOS TTS (Samantha, 180 wpm).
-- **Scripted Scenes:**
-  1. *Scene 1 (22.37s):* The Problem: Unchecked Programmatic AI Agent Transactions in Commerce.
-  2. *Scene 2 (21.50s):* Live Developer Sandbox Demonstration: Real REST API v2 Order Creation.
-  3. *Scene 3 (21.37s):* Fail-Closed Commercial Governance: Solvency Dilution & Official Webhook Verification Gates.
-  4. *Scene 4 (19.32s):* Automated Test Suite Execution (20/20 Python assertions + 3/3 Node assertions passing).
-  5. *Scene 5 (11.99s):* Open-Source Repository & Judge Evaluation Pack.
+- **File Record:** `velqiris_paypal_hackathon_final.mp4` (verified in [`RELEASE_MANIFEST_P0.json`](./RELEASE_MANIFEST_P0.json))
+- **Duration:** 172.46 seconds (2.87 minutes) — strictly complies with the < 3:00 minute rule.
+- **Resolution & Encoding:** 1920x1080 (1080p), 60 fps, H.264 Video / AAC Audio.
+- **File Size:** 7.12 MB.
+- **SHA-256 Checksum:** `645e9ea791bbb6608dacfca4ae25f9990b869efc8b8297208fa73a244aae5c9e`.
+- **Narration:** Studio-grade macOS TTS (Samantha).
+- **Public Video Stream:** `https://youtu.be/JGvCScSTd-c`
 
 ### Extracted Evidence Frames:
-1. [`capture_01_scene_1.png`](file://./competition_submissions/paypal_ai/evidence_captures/capture_01_scene_1.png)
-2. [`capture_02_scene_2.png`](file://./competition_submissions/paypal_ai/evidence_captures/capture_02_scene_2.png)
-3. [`capture_03_scene_3.png`](file://./competition_submissions/paypal_ai/evidence_captures/capture_03_scene_3.png)
-4. [`capture_04_scene_4.png`](file://./competition_submissions/paypal_ai/evidence_captures/capture_04_scene_4.png)
-5. [`capture_05_scene_5.png`](file://./competition_submissions/paypal_ai/evidence_captures/capture_05_scene_5.png)
+1. [`capture_01_scene_1.png`](./evidence_captures/capture_01_scene_1.png)
+2. [`capture_02_scene_2.png`](./evidence_captures/capture_02_scene_2.png)
+3. [`capture_03_scene_3.png`](./evidence_captures/capture_03_scene_3.png)
+4. [`capture_04_scene_4.png`](./evidence_captures/capture_04_scene_4.png)
+5. [`capture_05_scene_5.png`](./evidence_captures/capture_05_scene_5.png)
 
 ---
 
-## 5. REQUIRED USER ACTION TO REACH "FULLY COMPLIANT"
+## 5. SUBMISSION INTEGRITY
 
-1. Upload [`./velqiris_paypal_demo.mp4`](file://./velqiris_paypal_demo.mp4) to YouTube (Unlisted or Public, title: "VELQIRIS PayPal AI Evidence Gate Demo").
-2. Navigate to Devpost edit submission: `https://devpost.com/software/velqiris-paypal-ai-evidence-gate`.
-3. Replace video field with the new YouTube URL.
-4. Save submission.
-5. Notify agent to re-verify external Devpost page and flip verdict to `FULLY_CONFORMANT`.
+1. Video published publicly on YouTube: `https://youtu.be/JGvCScSTd-c`.
+2. Associated with official Devpost submission #1225851.
+3. Code repository public on GitHub: `https://github.com/genesiscode2026/velqiris-paypal-ai-evidence-gate`.
+4. Verdict: `SUBMISSION_COMPLETE_VERIFIED`.

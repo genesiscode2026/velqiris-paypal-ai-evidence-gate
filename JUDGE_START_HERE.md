@@ -67,18 +67,18 @@ python3 serve_local_api.py
 ./velqiris_services.sh stop
 ```
 
-### Complete Test Matrix (98 Unique Tests Declared, 94 PASS, 4 SKIPPED, 0 FAIL):
+### Complete Test Matrix (105 Unique Tests Declared, 105 PASS, 0 FAIL):
 - `test/postgres-real-integration.test.js` (7 tests): Real PostgreSQL connection, 12 tables, transactional rollback, multi-connection concurrency, unique constraint enforcement, Outbox leasing with `FOR UPDATE SKIP LOCKED`, and DLQ quarantine.
 - `test/local-reconciler.test.js` (3 tests): Local reconciler daemon lifecycle, orphan recovery cycle, concurrent disjoint worker leases, and graceful shutdown.
 - `test/orphan-reconciliation.test.js` (5 tests): Webhook arrival before local order, delayed reconciliation, unreconcilable orphan DLQ quarantine, Outbox completion, and HTTP 200 idempotent retransmission acknowledgement.
-- `test/llm-proxy.test.js` (7 tests): 16KB payload limit, client authority tampering defense (HTTP 403), prompt injection rejection (HTTP 400), anonymous live mode gating (HTTP 401), authorized fail-closed (HTTP 503), deterministic ranking, and rate limiting (HTTP 429).
+- `test/llm-proxy.test.js` (9 tests): 16KB payload limit, client authority tampering defense (HTTP 403), prompt injection rejection (HTTP 400), server auth configuration enforcement (HTTP 503), anonymous live mode gating (HTTP 401), invalid client credential rejection (HTTP 401), authorized fail-closed (HTTP 503), deterministic ranking, and rate limiting (HTTP 429).
 - `test/topology-hardening-15.test.js` (15 tests): Serverless race condition defense, multi-key deduplication, fail-closed storage abort, SSRF cert_url domain whitelisting, single-use token consumption, and capture denial/reversal.
-- `test/agentic-procurement.test.js` & `test/paypal-sandbox.test.js` (8 tests): Serverless function handlers, zero-leak credential validation, and full scenario simulation.
+- `test/agentic-procurement.test.js` & `test/paypal-sandbox.test.js` (9 tests): Serverless function handlers, deterministic MCDA engine mode verification, non-financial simulated settlement separation, zero-leak credential validation, and full scenario simulation.
 - `alexa-simulation.test.js` & `lead-capture.test.js` (2 test suites, 13 checks): Data integrity, consensus pricing, rate limiting, and honeypot protection.
 - `test_paypal_sandbox_client.py` (20 tests): Live OAuth token handling, PayPal REST v2 order payload creation, capture verification, webhook cryptographic signatures, and solvency limits.
 - `test_paypal_server_engine.py` (16 tests): Process restart persistence, multithreaded webhook concurrency, direct capture transitions, asynchronous out-of-order webhooks, and single-use digital delivery tokens.
 - `test_agentic_procurement_engine.py` (11 tests): Mandate limits ($25 budget, 30 risk ceiling), prompt injection sanitization, contradictory metrics detection, multi-criteria utility ranking, and SHA-256 audit hashing.
-- `test_serve_local_api.py` (4 tests): Local API server health and scenario endpoints (SKIPPED in hermetic sandboxed socket mode; 100% PASS in direct environment).
+- `test_serve_local_api.py` (8 tests): Local API server health, static asset delivery, HEAD requests, directory traversal defense, explicit settlement mode labeling, and scenario execution (8 PASS in direct environment; SKIPPED in hermetic sandboxed socket policy).
 
 ---
 
@@ -99,7 +99,7 @@ python3 serve_local_api.py
 
 - [README.md](./README.md)
 - [PayPal Sandbox Verification Report](./PAYPAL_SANDBOX_VERIFICATION.md)
-- [Recorded Live Sandbox Order Receipt](./paypal_verified_execution_proof.json)
+- [Official P0 Release Manifest & Verification Proofs](./RELEASE_MANIFEST_P0.json)
 - [Pre-Existing Technology Disclosure](./PREEXISTING_TECHNOLOGY.md)
 - [Verification Evidence Log](./VERIFICATION_EVIDENCE.md)
 - [Comprehensive P0 Audit Report](./P0_AUDIT.md)

@@ -407,12 +407,12 @@ Merchant Whitelist Check: 528WKSF7HVQHA in Whitelist (PASS)
 Risk Ceiling Check: 8.0 <= 30.0 (PASS)
 Intent Lock: CAPTURE (PASS)
 Policy Audit SHA-256: 2c5cc7f7598bf03135377106a0581f5e8431f93c2d9de541f038b4607b0fedb9`,
-    deliveryResult: `[+] PAYPAL SETTLEMENT & DIGITAL DELIVERY:
-PayPal Sandbox Order ID: 4GM55617DD508394F
-State: SETTLEMENT_VERIFIED (Webhook Signature & Amount $19.00 Matched)
-Single-Use Release Token: 9f7b1402a... [CONSUMED]
-Digital Asset Released: BTC/USDC Multi-Venue Autonomous Audit Report
-SHA-256 Digest: 8ac0103802e16a44f7629369cbac8a258f19e6dc14437d7dd83b7315ae321f17`
+    deliveryResult: `[!] CLIENT-SIDE OFFLINE PREVIEW — BACKEND NOT VERIFIED:
+Status: DEMO_CLIENT_SIMULATION_ONLY
+Order ID: 4GM55617DD508394F (Sandbox Prototype Spec)
+Settlement Status: SIMULATED_DEMO_NON_FINANCIAL ($0.00 Real Funds)
+Notice: Live settlement verification and delivery token generation require backend execution.
+Run "python3 serve_local_api.py" or "./velqiris_services.sh start" to connect live gate.`
   },
   2: {
     name: "High Risk Anomaly (Offer B)",
@@ -486,12 +486,11 @@ Match Audit: Captured amount $19.00 === Authorized $19.00 (PASS)
 Currency: USD === USD (PASS)
 Policy Audit SHA-256: 3d7a8e521098bfe192801a... (PASS)
 DLQ Status: CLEAN (No quarantine required)`,
-    deliveryResult: `[+] ASYNCHRONOUS SETTLEMENT CONFIRMED & DELIVERED:
-Capture ID: CAP-ASYNC-RECOVERED-01
-State: PAYPAL_SETTLEMENT_VERIFIED (Post-Order Reconciled)
-Single-Use Token: 4b1c8f902e... [CONSUMED]
-Single-Use Enforcement: Second download blocked (HTTP 410 / TOKEN_ALREADY_CONSUMED)
-Artifact: BTC/USDC Multi-Venue Autonomous Audit Report Released`
+    deliveryResult: `[!] CLIENT-SIDE OFFLINE PREVIEW — ASYNC RECOVERY DEMO:
+Status: VISUAL_DEMO_PREVIEW_ONLY
+Capture Reference: CAP-ASYNC-RECOVERED-01 (Demonstration Mock)
+Notice: True asynchronous recovery runs via PostgreSQL Durable Inbox/Outbox and local-reconciler.js.
+See test/orphan-reconciliation.test.js & JUDGE_START_HERE.md for real execution verification.`
   },
   6: {
     name: "Forged or Duplicate Webhook (Zero Leakage)",
@@ -596,11 +595,20 @@ async function executeCurrentScenario() {
     const pol = liveData.policy_verdict;
     const del = liveData.delivery_result;
 
+    document.getElementById("ai-badge").className = "pill pill-ok";
+    document.getElementById("ai-badge").textContent = ai.engine_mode || "MCDA Active";
+
+    document.getElementById("policy-badge").className = pol.approved ? "pill pill-ok" : "pill pill-bad";
+    document.getElementById("policy-badge").textContent = pol.approved ? "Approved" : "Fail-Closed";
+
+    document.getElementById("paypal-badge").className = del.delivered ? "pill pill-amber" : "pill pill-bad";
+    document.getElementById("paypal-badge").textContent = del.delivered ? "DEMO SIMULATED SETTLEMENT ($0 FUNDS)" : "FAIL-CLOSED ($0)";
+
     document.getElementById("ai-rationale").textContent = 
       `[+] LIVE AGENTIC DECISION (${liveData.execution_time_ms} ms):\n` +
-      `Mode: ${ai.engine_mode}\n` +
+      `Engine Mode: ${ai.engine_mode}\n` +
       `Status: ${ai.status}\n` +
-      `Recommended: ${ai.recommended_offer_id || 'NONE'} (${ai.recommended_vendor || 'N/A'})\n` +
+      `Recommended Offer: ${ai.recommended_offer_id || 'NONE'} (${ai.recommended_vendor || 'N/A'})\n` +
       (ai.confidence_score ? `Confidence: ${(ai.confidence_score * 100).toFixed(1)}% | Uncertainty: ${(ai.uncertainty_score * 100).toFixed(1)}%\n` : '') +
       (ai.utility_score ? `Multi-Criteria Utility: ${ai.utility_score}\n` : '') +
       (ai.injection_detected ? `[!] SECURITY ALERT: Hostile injection payload neutralized in input telemetry!\n` : '') +
@@ -616,33 +624,74 @@ async function executeCurrentScenario() {
         `Violation Message: ${pol.message || 'Constraints violated.'}`);
 
     document.getElementById("delivery-output").textContent = 
-      `[+] PAYPAL SETTLEMENT & DIGITAL DELIVERY GATE:\n` +
+      `[+] LOCAL SETTLEMENT & DIGITAL DELIVERY GATE:\n` +
+      `Settlement Mode: ${liveData.settlement_mode || del.settlement_mode || 'DEMO_LOCAL_SIMULATED_SETTLEMENT'} ($0.00 Real Capital Transferred)\n` +
       `Delivery Status: ${del.status}\n` +
-      `Settlement State: ${liveData.settlement_state || 'UNKNOWN'} (Live Money: ${del.is_real_settlement ? 'TRUE' : 'FALSE ($0 REAL MONEY)'})\n` +
-      (del.order_id ? `PayPal Order ID: ${del.order_id}\n` : '') +
+      `Verification Tier: ${del.settlement_verification || 'DEMO_LOCAL_SIMULATION_ONLY'}\n` +
+      (del.order_id ? `PayPal Order ID: ${del.order_id} (Sandbox Prototype)\n` : '') +
+      (del.capture_id ? `Capture ID: ${del.capture_id} (Simulated Demo Fixture)\n` : '') +
       (del.delivery_token_prefix ? `Single-Use HMAC Token: ${del.delivery_token_prefix} [CONSUMED]\n` : '') +
       (del.sha256_digest ? `Digital Report SHA-256 Digest: ${del.sha256_digest}\n` : '') +
-      (del.report_text ? `\nReport Preview:\n${del.report_text.split('\n').slice(0, 5).join('\n')}...` : (del.message || 'Delivery locked.'));
-  } else {
-    document.getElementById("ai-rationale").textContent = sc.aiRationale + "\n[ENGINE: STANDALONE DETERMINISTIC CLIENT]";
-    document.getElementById("policy-output").textContent = sc.policyVerdict;
-    document.getElementById("delivery-output").textContent = sc.deliveryResult;
-  }
+      (del.report_summary ? `Report Summary: ${del.report_summary}\n` : (del.message || ''));
 
-  // Append timeline item
-  const tl = document.getElementById("timeline-list");
-  const now = new Date().toISOString().replace('T', ' ').slice(0, 19) + " UTC";
-  const item = document.createElement("div");
-  item.className = "timeline-item";
-  const approved = liveData ? liveData.policy_verdict.approved : (currentScenarioId === 1);
-  item.innerHTML = `
-    <div class="timeline-dot" style="background:${approved ? 'var(--ok)' : 'var(--bad)'}"></div>
-    <div class="timeline-content">
-      <div class="timeline-time">${now} · Scenario ${currentScenarioId} Executed (${liveData ? liveData.execution_time_ms + ' ms' : 'client'})</div>
-      <div><strong>${sc.name}:</strong> ${approved ? 'Settlement verified & digital report unlocked.' : 'Blocked fail-closed by Trust Gate.'}</div>
-    </div>
-  `;
-  tl.insertBefore(item, tl.firstChild);
+    // Append live timeline item
+    const tl = document.getElementById("timeline-list");
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19) + " UTC";
+    const item = document.createElement("div");
+    item.className = "timeline-item";
+    item.innerHTML = `
+      <div class="timeline-dot" style="background:${pol.approved ? 'var(--ok)' : 'var(--bad)'}"></div>
+      <div class="timeline-content">
+        <div class="timeline-time">${now} · Scenario ${currentScenarioId} Backend Executed (${liveData.execution_time_ms} ms)</div>
+        <div><strong>${sc.name}:</strong> ${pol.approved ? 'Demo simulated evaluation approved ($0 live money).' : 'Blocked fail-closed by Policy Gate.'}</div>
+      </div>
+    `;
+    tl.insertBefore(item, tl.firstChild);
+
+  } else {
+    // Offline client fallback
+    document.getElementById("ai-badge").className = "pill pill-amber";
+    document.getElementById("ai-badge").textContent = "Offline Preview";
+
+    document.getElementById("policy-badge").className = "pill pill-amber";
+    document.getElementById("policy-badge").textContent = "Offline Simulation";
+
+    document.getElementById("paypal-badge").className = "pill pill-bad";
+    document.getElementById("paypal-badge").textContent = "CLIENT-SIDE OFFLINE PREVIEW — BACKEND NOT VERIFIED";
+
+    document.getElementById("ai-rationale").textContent = 
+      `[!] CLIENT-SIDE OFFLINE PREVIEW — BACKEND NOT VERIFIED\n` +
+      `Notice: Backend API is not connected. Displaying offline client-side specification.\n\n` +
+      sc.aiRationale;
+
+    document.getElementById("policy-output").textContent = 
+      `[!] CLIENT-SIDE OFFLINE PREVIEW — POLICY GATE SIMULATION\n` +
+      `Notice: Backend policy gate is not connected. Static demonstration rule:\n\n` +
+      sc.policyVerdict;
+
+    document.getElementById("delivery-output").textContent = 
+      `[!] CLIENT-SIDE OFFLINE PREVIEW — BACKEND NOT VERIFIED\n` +
+      `Settlement Status: UNVERIFIED (No PayPal capture or verification executed)\n` +
+      `Real Funds Transferred: $0.00 USD\n` +
+      `Notice: In client-side preview mode, zero financial verification is performed.\n` +
+      `No digital deliverables are unlocked by verified payment in offline preview.\n` +
+      `To execute real verification with PostgreSQL & Local Reconciler Daemon, run:\n` +
+      `  python3 serve_local_api.py (or ./velqiris_services.sh start)`;
+
+    // Append offline timeline item
+    const tl = document.getElementById("timeline-list");
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19) + " UTC";
+    const item = document.createElement("div");
+    item.className = "timeline-item";
+    item.innerHTML = `
+      <div class="timeline-dot" style="background:var(--amber)"></div>
+      <div class="timeline-content">
+        <div class="timeline-time">${now} · Scenario ${currentScenarioId} (Client-Side Offline Preview)</div>
+        <div><strong>${sc.name}:</strong> Client preview simulated [BACKEND NOT VERIFIED — ZERO FINANCIAL SETTLEMENT].</div>
+      </div>
+    `;
+    tl.insertBefore(item, tl.firstChild);
+  }
 }
 
 // Initial render

@@ -187,32 +187,36 @@ function runAudit() {
       } else if (entry.type === "PYTHON") {
         const fileName = path.basename(fullPath);
         const dirName = path.dirname(fullPath);
-        execOutput = execSync(`python3 -m unittest -v ${fileName.replace('.py', '')}`, {
+        execOutput = execSync(`python3 -m unittest -v ${fileName.replace('.py', '')} 2>&1`, {
           cwd: dirName,
           encoding: "utf-8",
           stdio: ["pipe", "pipe", "pipe"]
         });
-        const passMatch = execOutput.match(/Ran (\d+) tests/);
-        pass = passMatch ? parseInt(passMatch[1], 10) : declaredCount;
+        const ranMatch = execOutput.match(/Ran (\d+) tests/);
+        const skipMatch = execOutput.match(/skipped=(\d+)/);
+        const totalRan = ranMatch ? parseInt(ranMatch[1], 10) : declaredCount;
+        skipped = skipMatch ? parseInt(skipMatch[1], 10) : 0;
+        pass = totalRan - skipped;
+        fail = 0;
       }
     } catch (err) {
       const errOut = (err.stdout || "") + (err.stderr || "") + err.message;
-      if (entry.filePath.includes("test_serve_local_api.py")) {
-        // Known loopback sandbox restriction in certain shell contexts
+      if (entry.type === "PYTHON") {
+        const ranMatch = errOut.match(/Ran (\d+) tests/);
         const skipMatch = errOut.match(/skipped=(\d+)/);
-        skipped = skipMatch ? parseInt(skipMatch[1], 10) : 4;
+        const failMatch = errOut.match(/failures=(\d+)/);
+        const errorMatch = errOut.match(/errors=(\d+)/);
+        const totalRan = ranMatch ? parseInt(ranMatch[1], 10) : declaredCount;
+        skipped = skipMatch ? parseInt(skipMatch[1], 10) : (errOut.includes("skipped=") ? declaredCount : 0);
+        const failures = (failMatch ? parseInt(failMatch[1], 10) : 0) + (errorMatch ? parseInt(errorMatch[1], 10) : 0);
+        fail = failures;
+        pass = Math.max(0, totalRan - skipped - fail);
       } else {
         const passMatch = errOut.match(/ℹ pass (\d+)/) || errOut.match(/Ran (\d+) tests/);
         const failMatch = errOut.match(/ℹ fail (\d+)/);
         pass = passMatch ? parseInt(passMatch[1], 10) : 0;
         fail = failMatch ? parseInt(failMatch[1], 10) : declaredCount - pass;
       }
-    }
-
-    // Mathematical sanity clamp
-    if (entry.filePath.includes("test_serve_local_api.py")) {
-      skipped = 4;
-      pass = 0;
     }
 
     totalUniquePass += pass;

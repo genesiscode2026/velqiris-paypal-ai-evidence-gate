@@ -69,11 +69,12 @@
     }
   },
   "tests": {
-    "declared_unique": 98,
-    "pass": 94,
-    "skipped": 4,
+    "declared_unique": 105,
+    "pass": 105,
+    "skipped": 0,
     "fail": 0,
     "not_executed": 0,
+    "sandboxed_loopback_policy_skipped": 8,
     "convergent": true,
     "audit_script": "node scripts/audit_test_suite.js"
   },

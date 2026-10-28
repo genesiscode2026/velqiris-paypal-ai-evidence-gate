@@ -196,13 +196,15 @@ async function evaluateProcurement(scenarioId, isLiveProduction = false) {
   let injectionDetected = false;
   const eligible = [];
 
-  // P0.5 Invariant: If Live Production and LLM is unavailable, FAIL-CLOSED
+  // P0.5 Invariant: If Live Production requested and LLM API key is unavailable, FAIL-CLOSED
   if (isLiveProduction) {
     const apiKey = process.env.MODEL_API_KEY;
     if (!apiKey) {
       return {
         scenario_id: scenarioId,
         execution_time_ms: 1.0,
+        settlement_mode: "DEMO_LOCAL_SIMULATED_SETTLEMENT",
+        is_real_financial_settlement: false,
         mandate: MANDATE,
         ai_decision: {
           decision_id: `AI-DECISION-${Date.now()}`,
@@ -219,10 +221,17 @@ async function evaluateProcurement(scenarioId, isLiveProduction = false) {
           message: "Zero funds authorized without verified AI reasoning."
         },
         settlement_state: "FAILED",
-        delivery_result: { delivered: false, status: "ACCESS_DENIED_PAYMENT_NOT_SETTLED" }
+        delivery_result: {
+          delivered: false,
+          status: "ACCESS_DENIED_PAYMENT_NOT_SETTLED",
+          settlement_mode: "DEMO_LOCAL_SIMULATED_SETTLEMENT",
+          is_real_settlement: false
+        }
       };
     }
   }
+
+
 
   for (const o of rawOffers) {
     const titleCheck = sanitizeInput(o.asset_title);
@@ -271,8 +280,8 @@ async function evaluateProcurement(scenarioId, isLiveProduction = false) {
     eligible.push({ utility, offer: o, ev });
   }
 
-  // AI Decision (Labeled as DEMO_DETERMINISTIC_ONLY in demonstration mode)
-  const engineMode = isLiveProduction ? "ONLINE_LLM_INFERENCE" : "DEMO_DETERMINISTIC_ONLY";
+  // AI Decision (Labeled strictly as DETERMINISTIC_MCDA_POLICY_ENGINE since this function executes deterministic scoring)
+  const engineMode = "DETERMINISTIC_MCDA_POLICY_ENGINE";
   let aiDecision;
 
   if (eligible.length === 0) {
@@ -359,7 +368,8 @@ async function evaluateProcurement(scenarioId, isLiveProduction = false) {
     } else if (chosen.risk_score > MANDATE.max_tolerable_risk_score) {
       policyVerdict = { approved: false, verdict_code: "POLICY_REJECT_RISK_THRESHOLD_EXCEEDED" };
     } else {
-      const authSessionId = `VELQIRIS-AUTH-${Date.now()}-${chosen.offer_id}`;
+      const authNonce = crypto.randomBytes(4).toString("hex");
+      const authSessionId = `VELQIRIS-AUTH-${Date.now()}-${authNonce}-${chosen.offer_id}`;
       const evidencePacket = {
         mandate_id: MANDATE.mandate_id,
         decision_id: aiDecision.decision_id,
@@ -421,13 +431,15 @@ async function evaluateProcurement(scenarioId, isLiveProduction = false) {
     deliveryResult = {
       delivered: false,
       status: "ACCESS_DENIED_PAYMENT_NOT_SETTLED",
+      settlement_mode: "DEMO_LOCAL_SIMULATED_SETTLEMENT",
+      is_real_settlement: false,
       message: "Digital delivery requires verified PayPal settlement. Policy gate halted execution fail-closed."
     };
   } else {
     // Demonstration settlement: Explicitly marked as SIMULATED
     settlementState = "DEMO_SETTLEMENT_SIMULATED";
     const orderId = "4GM55617DD508394F";
-    const captureId = "CAP-DEMO-SIMULATED-888";
+    const captureId = "CAP-DEMO-SIMULATED-LOCAL";
     const tokenSecret = "VELQIRIS_DELIVERY_SECRET_KEY";
     const tokenMsg = `${policyVerdict.authorized_session_id}:${orderId}:${captureId}:${policyVerdict.authorized_order_spec.amount_usd}`;
     const deliveryToken = crypto.createHmac("sha256", tokenSecret).update(tokenMsg).digest("hex");
@@ -438,6 +450,7 @@ async function evaluateProcurement(scenarioId, isLiveProduction = false) {
     deliveryResult = {
       delivered: true,
       status: "DEMO_DELIVERED_SIMULATED",
+      settlement_mode: "DEMO_LOCAL_SIMULATED_SETTLEMENT",
       settlement_type: "SIMULATED_DEMO_NON_FINANCIAL",
       is_real_settlement: false,
       order_id: orderId,
@@ -453,6 +466,8 @@ async function evaluateProcurement(scenarioId, isLiveProduction = false) {
   return {
     scenario_id: scenarioId,
     execution_time_ms: durationMs < 1 ? 1.25 : durationMs,
+    settlement_mode: "DEMO_LOCAL_SIMULATED_SETTLEMENT",
+    is_real_financial_settlement: false,
     mandate: MANDATE,
     raw_offers: rawOffers,
     ai_decision: aiDecision,

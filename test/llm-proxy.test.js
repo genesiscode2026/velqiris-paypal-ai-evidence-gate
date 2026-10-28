@@ -56,35 +56,101 @@ test("GATE Y: LLM Proxy detects and rejects prompt injection attempts with HTTP 
   assert.equal(data.error, "PROMPT_INJECTION_DETECTED");
 });
 
-test("GATE AO: Anonymous request for billable LIVE_PRODUCTION mode is rejected with HTTP 401", async () => {
-  const req = {
-    httpMethod: "POST",
-    headers: { "x-forwarded-for": "10.0.0.4" },
-    body: JSON.stringify({
-      mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
-      offers: SAMPLE_OFFERS,
-      mode: "LIVE_PRODUCTION"
-    })
-  };
+test("GATE AO: LIVE_PRODUCTION rejected with HTTP 503 if server auth secret is not configured", async () => {
+  const oldServerSecret = process.env.VELQIRIS_MANDATE_AUTH_KEY;
+  delete process.env.VELQIRIS_MANDATE_AUTH_KEY;
 
-  const res = await llmProxyHandler(req);
-  assert.equal(res.statusCode, 401);
-  const data = JSON.parse(res.body);
-  assert.equal(data.error, "UNAUTHORIZED_LIVE_INFERENCE");
-  assert.equal(data.authorized_budget_usd, 0.00);
+  try {
+    const req = {
+      httpMethod: "POST",
+      headers: { "x-forwarded-for": "10.0.0.4", "x-velqiris-mandate-key": "any-key" },
+      body: JSON.stringify({
+        mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
+        offers: SAMPLE_OFFERS,
+        mode: "LIVE_PRODUCTION"
+      })
+    };
+
+    const res = await llmProxyHandler(req);
+    assert.equal(res.statusCode, 503);
+    const data = JSON.parse(res.body);
+    assert.equal(data.error, "SERVER_AUTH_NOT_CONFIGURED");
+    assert.equal(data.authorized_budget_usd, 0.00);
+  } finally {
+    if (oldServerSecret) process.env.VELQIRIS_MANDATE_AUTH_KEY = oldServerSecret;
+  }
 });
 
-test("GATE Y & AO: Authorized LIVE_PRODUCTION request without API key fails closed with HTTP 503 and $0 authorized", async () => {
-  const oldKey = process.env.OPENAI_API_KEY;
-  delete process.env.OPENAI_API_KEY;
-  delete process.env.MODEL_API_KEY;
+test("GATE AO: Anonymous request for billable LIVE_PRODUCTION mode is rejected with HTTP 401", async () => {
+  const oldServerSecret = process.env.VELQIRIS_MANDATE_AUTH_KEY;
+  process.env.VELQIRIS_MANDATE_AUTH_KEY = "SECRET_SERVER_MANDATE_KEY_999";
+
+  try {
+    const req = {
+      httpMethod: "POST",
+      headers: { "x-forwarded-for": "10.0.0.4" },
+      body: JSON.stringify({
+        mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
+        offers: SAMPLE_OFFERS,
+        mode: "LIVE_PRODUCTION"
+      })
+    };
+
+    const res = await llmProxyHandler(req);
+    assert.equal(res.statusCode, 401);
+    const data = JSON.parse(res.body);
+    assert.equal(data.error, "UNAUTHORIZED_LIVE_INFERENCE");
+    assert.equal(data.authorized_budget_usd, 0.00);
+  } finally {
+    if (oldServerSecret) process.env.VELQIRIS_MANDATE_AUTH_KEY = oldServerSecret;
+    else delete process.env.VELQIRIS_MANDATE_AUTH_KEY;
+  }
+});
+
+test("GATE AO: Invalid client secret for LIVE_PRODUCTION mode is rejected with HTTP 401", async () => {
+  const oldServerSecret = process.env.VELQIRIS_MANDATE_AUTH_KEY;
+  process.env.VELQIRIS_MANDATE_AUTH_KEY = "SECRET_SERVER_MANDATE_KEY_999";
 
   try {
     const req = {
       httpMethod: "POST",
       headers: {
         "x-forwarded-for": "10.0.0.4",
-        "x-velqiris-mandate-key": "MANDATE_AUTH_AUTHORIZED_DEMO_2026"
+        "x-velqiris-mandate-key": "WRONG_FORGED_CREDENTIAL"
+      },
+      body: JSON.stringify({
+        mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
+        offers: SAMPLE_OFFERS,
+        mode: "LIVE_PRODUCTION"
+      })
+    };
+
+    const res = await llmProxyHandler(req);
+    assert.equal(res.statusCode, 401);
+    const data = JSON.parse(res.body);
+    assert.equal(data.error, "UNAUTHORIZED_LIVE_INFERENCE");
+    assert.equal(data.authorized_budget_usd, 0.00);
+  } finally {
+    if (oldServerSecret) process.env.VELQIRIS_MANDATE_AUTH_KEY = oldServerSecret;
+    else delete process.env.VELQIRIS_MANDATE_AUTH_KEY;
+  }
+});
+
+test("GATE Y & AO: Authorized LIVE_PRODUCTION request without API key fails closed with HTTP 503 and $0 authorized", async () => {
+  const oldKey = process.env.OPENAI_API_KEY;
+  const oldModelKey = process.env.MODEL_API_KEY;
+  const oldServerSecret = process.env.VELQIRIS_MANDATE_AUTH_KEY;
+
+  delete process.env.OPENAI_API_KEY;
+  delete process.env.MODEL_API_KEY;
+  process.env.VELQIRIS_MANDATE_AUTH_KEY = "SECRET_SERVER_MANDATE_KEY_999";
+
+  try {
+    const req = {
+      httpMethod: "POST",
+      headers: {
+        "x-forwarded-for": "10.0.0.4",
+        "x-velqiris-mandate-key": "SECRET_SERVER_MANDATE_KEY_999"
       },
       body: JSON.stringify({
         mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
@@ -101,6 +167,9 @@ test("GATE Y & AO: Authorized LIVE_PRODUCTION request without API key fails clos
     assert.equal(data.authorized_budget_usd, 0.00);
   } finally {
     if (oldKey) process.env.OPENAI_API_KEY = oldKey;
+    if (oldModelKey) process.env.MODEL_API_KEY = oldModelKey;
+    if (oldServerSecret) process.env.VELQIRIS_MANDATE_AUTH_KEY = oldServerSecret;
+    else delete process.env.VELQIRIS_MANDATE_AUTH_KEY;
   }
 });
 

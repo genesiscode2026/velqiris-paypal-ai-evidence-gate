@@ -217,10 +217,18 @@ async function handler(event) {
 
   if (mode === "LIVE_PRODUCTION") {
     // GATE AO: Persistent Cost & Quota Control - Gating Billable AI Calls
-    const mandateKey = event.headers?.["x-velqiris-mandate-key"] || event.headers?.["authorization"]?.replace(/^Bearer\s+/i, "");
-    const AUTHORIZED_MANDATE_KEY = process.env.VELQIRIS_MANDATE_AUTH_KEY || "MANDATE_AUTH_AUTHORIZED_DEMO_2026";
+    const serverAuthKey = process.env.VELQIRIS_MANDATE_AUTH_KEY;
+    if (!serverAuthKey || typeof serverAuthKey !== "string" || serverAuthKey.trim().length === 0) {
+      return reply(503, {
+        error: "SERVER_AUTH_NOT_CONFIGURED",
+        message: "Live production mandate authorization key is not configured on server. Failing closed.",
+        status: "REJECTED_FAIL_CLOSED",
+        authorized_budget_usd: 0.00
+      });
+    }
 
-    if (!mandateKey || mandateKey !== AUTHORIZED_MANDATE_KEY) {
+    const clientKey = event.headers?.["x-velqiris-mandate-key"] || event.headers?.["authorization"]?.replace(/^Bearer\s+/i, "");
+    if (!clientKey) {
       return reply(401, {
         error: "UNAUTHORIZED_LIVE_INFERENCE",
         message: "Public anonymous requests are restricted from initiating billable live LLM inference. Authorized mandate credential required.",
@@ -229,8 +237,22 @@ async function handler(event) {
       });
     }
 
+    // Constant-time timing-safe comparison to prevent side-channel timing leaks
+    const bufClient = Buffer.from(String(clientKey));
+    const bufServer = Buffer.from(String(serverAuthKey));
+    const isMatch = bufClient.length === bufServer.length && crypto.timingSafeEqual(bufClient, bufServer);
+
+    if (!isMatch) {
+      return reply(401, {
+        error: "UNAUTHORIZED_LIVE_INFERENCE",
+        message: "Provided mandate authorization credential is invalid. Access denied.",
+        status: "REJECTED_FAIL_CLOSED",
+        authorized_budget_usd: 0.00
+      });
+    }
+
     if (!apiKey) {
-      // Fail-closed
+      // Fail-closed before invoking provider
       return reply(503, {
         error: "AI_MODEL_UNAVAILABLE_ABORT",
         status: "REJECTED_FAIL_CLOSED",
