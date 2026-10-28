@@ -1,0 +1,83 @@
+{
+  "timestamp": "2026-10-28T20:29:36Z",
+  "project": "VELQIRIS \u2014 Agentic Commerce Trust Gate",
+  "challenge": "PayPal AI Hackathon 2026",
+  "identity": {
+    "project_name": "VELQIRIS",
+    "contact": "chitara.trading@proton.me"
+  },
+  "scenarios": {
+    "scenario_1": {
+      "verdict_code": "POLICY_APPROVED_FOR_PAYPAL_SETTLEMENT",
+      "approved": true,
+      "delivery_status": "DELIVERED_SUCCESS",
+      "verified": true
+    },
+    "scenario_2": {
+      "verdict_code": "POLICY_REJECT_RISK_THRESHOLD_EXCEEDED",
+      "approved": false,
+      "delivery_status": "ACCESS_DENIED_PAYMENT_NOT_SETTLED",
+      "verified": true
+    },
+    "scenario_3": {
+      "verdict_code": "POLICY_REJECT_BUDGET_EXCEEDED",
+      "approved": false,
+      "delivery_status": "ACCESS_DENIED_PAYMENT_NOT_SETTLED",
+      "verified": true
+    },
+    "scenario_4": {
+      "verdict_code": "SECURITY_REJECT_PROMPT_INJECTION",
+      "approved": false,
+      "delivery_status": "ACCESS_DENIED_PAYMENT_NOT_SETTLED",
+      "verified": true
+    },
+    "scenario_5": {
+      "verdict_code": "POLICY_APPROVED_FOR_PAYPAL_SETTLEMENT",
+      "approved": true,
+      "delivery_status": "DELIVERED_SUCCESS",
+      "verified": true
+    },
+    "scenario_6": {
+      "verdict_code": "SECURITY_REJECT_FORGED_WEBHOOK_SIGNATURE",
+      "approved": false,
+      "delivery_status": "ACCESS_DENIED_PAYMENT_NOT_SETTLED",
+      "verified": true
+    }
+  },
+  "tests": {
+    "declared_unique": 98,
+    "pass": 94,
+    "skipped": 4,
+    "fail": 0,
+    "convergent": true
+  },
+  "video": {
+    "file": "velqiris_paypal_hackathon_final.mp4",
+    "duration_seconds": 172.462969,
+    "resolution": "1920x1080",
+    "size_bytes": 7118484,
+    "sha256": "645e9ea791bbb6608dacfca4ae25f9990b869efc8b8297208fa73a244aae5c9e",
+    "status": "VERIFIED_AUTHENTIC_MP4"
+  },
+  "github": {
+    "url": "https://github.com/genesiscode2026/velqiris-paypal-ai-evidence-gate",
+    "latest_commit": "a02bcbd809b97b552fcec995feb873c0a99807fe",
+    "visibility": "PUBLIC",
+    "license": "MIT",
+    "status": "VERIFIED_PUBLIC"
+  },
+  "youtube": {
+    "local_video_prepared": true,
+    "previous_recorded_video_id": "BCelcY_5iwQ",
+    "status": "READY_FOR_USER_AUTHORIZED_UPLOAD",
+    "instructions": "Open YouTube Studio in authorized channel, select velqiris_paypal_hackathon_final.mp4, and paste final video URL."
+  },
+  "devpost": {
+    "competition": "PayPal AI Hackathon 2026",
+    "challenge_id": "31302",
+    "submission_id": "1225851",
+    "url": "https://devpost.com/software/velqiris-paypal-ai-evidence-gate",
+    "status": "DOSSIER_COMPLETE_READY_FOR_SUBMIT"
+  },
+  "overall_status": "READY_FOR_FINAL_DEVPOST_SUBMISSION"
+}
