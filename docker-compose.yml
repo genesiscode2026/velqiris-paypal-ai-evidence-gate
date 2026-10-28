@@ -1,0 +1,22 @@
+services:
+  velqiris-postgres:
+    container_name: velqiris-postgres
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: velqiris_admin
+      POSTGRES_PASSWORD: velqiris_test_password_2026
+      POSTGRES_DB: velqiris_test_db
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - velqiris_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U velqiris_admin -d velqiris_test_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+      start_period: 2s
+
+volumes:
+  velqiris_pg_data:

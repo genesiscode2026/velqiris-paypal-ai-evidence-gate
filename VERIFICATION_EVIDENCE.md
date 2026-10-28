@@ -9,21 +9,27 @@ Command: `python3 -m unittest -v test_paypal_sandbox_client.py`
 ```
 test_build_create_order_payload_structure ... ok
 test_capture_order_invalid_id_rejected ... ok
+test_capture_order_invalid_state_http_error ... ok
 test_capture_order_without_credentials_fails_closed ... ok
 test_create_order_mock_api_success ... ok
+test_create_order_network_retry_and_timeout ... ok
 test_create_order_without_credentials_fails_closed ... ok
+test_duplicate_webhook_transmission_id_tracking ... ok
 test_generate_ai_market_intelligence_success ... ok
 test_generate_ai_market_intelligence_unverified_payment_rejected ... ok
 test_generate_ai_requires_real_provider ... ok
 test_oauth2_missing_credentials_returns_none ... ok
 test_oauth2_mock_success_token ... ok
+test_solvency_excessive_dilution_blocked ... ok
+test_solvency_extreme_risk_blocked ... ok
+test_solvency_standard_approved ... ok
 test_verify_webhook_headers_without_credentials_fail_closed ... ok
 test_verify_webhook_invalid_json_fails ... ok
 test_verify_webhook_missing_headers_fails ... ok
 test_verify_webhook_official_api_success ... ok
 
 ----------------------------------------------------------------------
-Ran 14 tests in 0.004s
+Ran 20 tests in 0.004s
 
 OK
 ```

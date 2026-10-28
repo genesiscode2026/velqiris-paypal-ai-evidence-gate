@@ -197,6 +197,34 @@ class TestPayPalSandboxAIClient(unittest.TestCase):
         # Duplicate detection assertion
         self.assertIn(tx_id, seen_transmissions)
 
+    def test_solvency_standard_approved(self):
+        res = self.client_no_creds.evaluate_merchant_asset_solvency({
+            "circulating_supply": 19_000_000.0,
+            "annual_net_inflation_pct": 1.2,
+            "overall_risk_class": "MODERATE_RELATIVE_TO_CRYPTO"
+        })
+        self.assertTrue(res["checkout_permitted"])
+        self.assertEqual(res["verdict"], "APPROVED_STANDARD_CHECKOUT")
+        self.assertAlmostEqual(res["projected_1y_dilution_drag_pct"], 1.2, places=1)
+
+    def test_solvency_extreme_risk_blocked(self):
+        res = self.client_no_creds.evaluate_merchant_asset_solvency({
+            "circulating_supply": 100_000_000.0,
+            "annual_net_inflation_pct": 5.0,
+            "overall_risk_class": "EXTREME"
+        })
+        self.assertFalse(res["checkout_permitted"])
+        self.assertEqual(res["verdict"], "REJECTED_EXTREME_SOLVENCY_RISK")
+
+    def test_solvency_excessive_dilution_blocked(self):
+        res = self.client_no_creds.evaluate_merchant_asset_solvency({
+            "circulating_supply": 100_000.0,
+            "annual_net_inflation_pct": 50.0,
+            "overall_risk_class": "MODERATE_RELATIVE_TO_CRYPTO"
+        })
+        self.assertFalse(res["checkout_permitted"])
+        self.assertEqual(res["verdict"], "FLAGGED_EXCESSIVE_DILUTION_RISK")
+
 
 if __name__ == "__main__":
     unittest.main()

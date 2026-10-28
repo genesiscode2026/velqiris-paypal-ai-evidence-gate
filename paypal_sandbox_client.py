@@ -328,6 +328,59 @@ class PayPalSandboxAIClient:
             ).hexdigest(),
         }
 
+    def evaluate_merchant_asset_solvency(
+        self,
+        asset_telemetry: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Pre-checkout autonomous solvency and dilution risk gating.
+        Evaluates merchant digital asset volatility, annual dilution drag, and risk class
+        prior to PayPal sandbox transaction creation (derived from ASYMTRACE Gate G5/G7).
+        """
+        circulating = float(asset_telemetry.get("circulating_supply", 0.0))
+        inflation_pct = float(asset_telemetry.get("annual_net_inflation_pct", 0.0))
+        horizon_years = float(asset_telemetry.get("horizon_years", 1.0))
+        scheduled_unlocks = float(asset_telemetry.get("scheduled_unlock_tokens", 0.0))
+        max_supply = asset_telemetry.get("max_supply")
+        effective_max = float(max_supply) if (max_supply and float(max_supply) > 0) else float("inf")
+
+        if circulating <= 0:
+            return {
+                "verdict": "REJECTED_INVALID_SUPPLY",
+                "risk_class": "UNKNOWN",
+                "checkout_permitted": False,
+                "reason": "Circulating supply must be strictly positive."
+            }
+
+        compound_factor = (1.0 + (inflation_pct / 100.0)) ** horizon_years
+        projected_supply = min(circulating * compound_factor + scheduled_unlocks, effective_max)
+        dilution_drag_pct = ((projected_supply - circulating) / circulating) * 100.0
+
+        risk_class = asset_telemetry.get("overall_risk_class", "MODERATE_RELATIVE_TO_CRYPTO")
+
+        if risk_class == "EXTREME":
+            verdict = "REJECTED_EXTREME_SOLVENCY_RISK"
+            permitted = False
+        elif dilution_drag_pct > 35.0:
+            verdict = "FLAGGED_EXCESSIVE_DILUTION_RISK"
+            permitted = False
+        elif risk_class == "HIGH" or dilution_drag_pct > 15.0:
+            verdict = "APPROVED_WITH_HIGH_VOLATILITY_SURCHARGE"
+            permitted = True
+        else:
+            verdict = "APPROVED_STANDARD_CHECKOUT"
+            permitted = True
+
+        return {
+            "verdict": verdict,
+            "checkout_permitted": permitted,
+            "risk_class": risk_class,
+            "annual_net_inflation_pct": inflation_pct,
+            "projected_1y_dilution_drag_pct": round(dilution_drag_pct, 2),
+            "projected_supply": round(projected_supply, 2),
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%SZ", time.gmtime()),
+        }
+
 
 if __name__ == "__main__":
     client = PayPalSandboxAIClient()

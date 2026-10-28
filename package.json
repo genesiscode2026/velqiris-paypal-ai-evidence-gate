@@ -1,0 +1,21 @@
+{
+  "name": "velqiris-agentic-trust-gate",
+  "version": "1.0.0",
+  "description": "VELQIRIS — Agentic Commerce Trust Gate (PayPal AI Hackathon 2026)",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:pg": "node --test test/postgres-real-integration.test.js test/local-reconciler.test.js",
+    "test:all": "node scripts/audit_test_suite.js",
+    "start": "./velqiris_services.sh start",
+    "stop": "./velqiris_services.sh stop",
+    "health": "./velqiris_services.sh health"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  },
+  "license": "MIT"
+}
