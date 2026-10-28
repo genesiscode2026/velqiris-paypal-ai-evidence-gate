@@ -69,15 +69,19 @@
   "youtube": {
     "local_video_prepared": true,
     "previous_recorded_video_id": "BCelcY_5iwQ",
-    "status": "READY_FOR_USER_AUTHORIZED_UPLOAD",
-    "instructions": "Open YouTube Studio in authorized channel, select velqiris_paypal_hackathon_final.mp4, and paste final video URL."
+    "status": "VERIFIED_PUBLIC_UPLOAD",
+    "instructions": "Open YouTube Studio in authorized channel, select velqiris_paypal_hackathon_final.mp4, and paste final video URL.",
+    "url": "https://youtu.be/JGvCScSTd-c",
+    "video_id": "JGvCScSTd-c",
+    "published_timestamp": "2026-10-28T20:54:38Z"
   },
   "devpost": {
     "competition": "PayPal AI Hackathon 2026",
     "challenge_id": "31302",
     "submission_id": "1225851",
     "url": "https://devpost.com/software/velqiris-paypal-ai-evidence-gate",
-    "status": "DOSSIER_COMPLETE_READY_FOR_SUBMIT"
+    "status": "VERIFIED_SUBMITTED_AND_CONFIRMED",
+    "updated_timestamp": "2026-10-28T20:57:05Z"
   },
-  "overall_status": "READY_FOR_FINAL_DEVPOST_SUBMISSION"
+  "overall_status": "RELEASE_AND_SUBMISSION_COMPLETE"
 }
