@@ -61,7 +61,7 @@
   },
   "github": {
     "url": "https://github.com/genesiscode2026/velqiris-paypal-ai-evidence-gate",
-    "latest_commit": "a02bcbd809b97b552fcec995feb873c0a99807fe",
+    "latest_commit": "ee7cedf",
     "visibility": "PUBLIC",
     "license": "MIT",
     "status": "VERIFIED_PUBLIC"
@@ -81,7 +81,10 @@
     "submission_id": "1225851",
     "url": "https://devpost.com/software/velqiris-paypal-ai-evidence-gate",
     "status": "VERIFIED_SUBMITTED_AND_CONFIRMED",
-    "updated_timestamp": "2026-10-28T20:57:05Z"
+    "updated_timestamp": "2026-10-28T20:57:05Z",
+    "submission_video_url": "https://youtu.be/JGvCScSTd-c",
+    "submission_status": "SUBMITTED (5/5 steps done)",
+    "last_consistency_lock": "2026-10-28T21:35:00Z"
   },
   "overall_status": "RELEASE_AND_SUBMISSION_COMPLETE"
 }
