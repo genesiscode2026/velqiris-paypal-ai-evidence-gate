@@ -17,16 +17,28 @@
 Autonomous agents are increasingly authorized to purchase digital assets, compute services, and intelligence feeds. However, existing LLMs are vulnerable to hallucinated spending, over-budget drift, and prompt injection attacks embedded in untrusted vendor listings.
 
 VELQIRIS solves this by enforcing a 5-layer non-bypassable architecture:
-1. **Layer 1: Immutable Procurement Mandate:** Hard budget ceiling (**$25.00 USD**), maximum risk tolerance (**30.0/100**), and institutional merchant whitelist (`528WKSF7HVQHA`).
-   *(Note on demonstration video: In the video walkthrough, an isolated stress-test demonstration of Scenario 3 showcases a tightened $20.00 cap to visually emphasize extreme budget overrun rejection (+45%), fully proving policy non-bypassability across both $20.00 and $25.00 configurations).*
+1. **Layer 1: Immutable Procurement Mandate:** Baseline institutional boundaries (**$25.00 USD hard budget cap**, maximum **30.0/100 risk tolerance ceiling**, merchant whitelist `528WKSF7HVQHA`).
 2. **Layer 2: AI Decision Engine:** Dual-mode comparative reasoning: active offline Heuristic Epistemic Risk Engine (Multi-Criteria Utility $U(o)$ and Epistemic Uncertainty Quantification $\in [0, 1]$) with adversarial prompt injection sanitization, paired with an isolated backend LLM proxy architecture (`llm-proxy.js`) for schema-gated inference.
 3. **Layer 3: Deterministic Policy Enforcement Gate:** Non-bypassable mathematical guard enforcing zero price tampering, zero budget overruns, and zero unauthorized merchants, outputting an immutable SHA-256 policy audit hash.
 4. **Layer 4: Real PostgreSQL Storage Engine & Transactional Outbox:** Canonical 12-table schema, row-level locking (`FOR UPDATE SKIP LOCKED`), and Durable Webhook Inbox with Dead Letter Queue (DLQ).
 5. **Layer 5: Local Reconciler Daemon & Single-Use Digital Delivery:** Recovers orphan PayPal webhooks arriving before local orders, enforces multi-key idempotency, and releases single-use HMAC-SHA256 digital release tokens.
 
+### Canonical Parameters & 6 Reference Scenarios:
+- **Baseline Candidate Offers:**
+  - **Offer A (`OFFER-ALPHA-01`):** Price $19.00 USD, Risk 8.0/100, Quality 96.5/100 (Legitimate Merchant `528WKSF7HVQHA`)
+  - **Offer B (`OFFER-BETA-02`):** Price $16.00 USD, Risk 78.5/100, Quality 58.0/100 (High-risk telemetry, 19.4% dispute rate)
+  - **Offer C (`OFFER-GAMMA-03`):** Price $29.00 USD, Risk 4.5/100, Quality 99.0/100 (Institutional tier exceeding budget)
+- **Scenario Execution Results:**
+  - **Scenario 1 (Multi-Offer Evaluation):** Mandate ($25 cap, 30 risk) evaluates all 3 offers $\rightarrow$ Selects Offer A $\rightarrow$ `POLICY_APPROVED_FOR_PAYPAL_SETTLEMENT` $\rightarrow$ PayPal Order spec locked $\rightarrow$ Delivery released.
+  - **Scenario 2 (Isolated Risk Stress Test):** Mandate configured with tighter risk ceiling (20.0), evaluating Offer B (Risk 78.5) $\rightarrow$ `POLICY_REJECT_RISK_THRESHOLD_EXCEEDED` $\rightarrow$ Intercepted fail-closed ($0 spent). *(Note: Offer B also fails baseline 30.0 limit).*
+  - **Scenario 3 (Isolated Budget Stress Test):** Mandate configured with tighter budget cap ($20.00), evaluating Offer C ($29.00) $\rightarrow$ `POLICY_REJECT_BUDGET_EXCEEDED` $\rightarrow$ Intercepted fail-closed ($0 spent). *(Note: Offer C also fails baseline $25.00 limit).*
+  - **Scenario 4 (Adversarial Prompt Injection):** Mandate evaluates malicious offer containing override directives $\rightarrow$ `SECURITY_REJECT_PROMPT_INJECTION` $\rightarrow$ Input sanitized, transaction blocked fail-closed.
+  - **Scenario 5 (Asynchronous Orphan Webhook Recovery):** PayPal webhook arrives before local order $\rightarrow$ durable inbox queues event $\rightarrow$ order registered $\rightarrow$ local reconciler matches order and unlocks deliverable $\rightarrow$ `POLICY_APPROVED_FOR_PAYPAL_SETTLEMENT`.
+  - **Scenario 6 (Forged & Replay Webhook Defense):** Fraudulent signature rejected with HTTP 401 (`SECURITY_REJECT_FORGED_WEBHOOK_SIGNATURE`); duplicate replay acknowledged idempotently with HTTP 200 (`ALREADY_PROCESSED_IDEMPOTENT_OK`) without side effects.
+
 > [!IMPORTANT]
 > **PayPal Sandbox Operations & Settlement Distinction:**  
-> Orders generated via the official PayPal REST API v2 (`POST /v2/checkout/orders`, `intent: CAPTURE`) are verified in the developer sandbox with status `CREATED`. Post-capture settlement is verified through cryptographic RS256 webhook signatures and reconciler processing. Zero real capital ($0 USD) is disbursed.
+> Orders generated via the official PayPal REST API v2 (`POST /v2/checkout/orders`, `intent: CAPTURE`) are verified in the developer sandbox with status `CREATED`. Post-capture settlement is verified through cryptographic RS256 webhook signatures and reconciler processing. Zero real capital ($0 USD) is disbursed. Status `CREATED` represents an authorized order specification, strictly separated from settled funds.
 
 ---
 

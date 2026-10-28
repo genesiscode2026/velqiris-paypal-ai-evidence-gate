@@ -1,8 +1,9 @@
 # VELQIRIS PAYPAL AI EVIDENCE GATE — SUBMISSION AUDIT & REMEDIATION DOSSIER
 
-> [!NOTE]
-> **HISTORICAL ENGINEERING AUDIT RECORD (OCTOBER 19, 2026):**  
-> This dossier represents an early developmental audit from October 19, 2026, documenting pre-release compliance gaps that were subsequently resolved. All blocking conditions have been satisfied in the final production release. For canonical status, parameters, and execution instructions, consult [JUDGE_START_HERE.md](./JUDGE_START_HERE.md) and [RELEASE_MANIFEST_P0.json](./RELEASE_MANIFEST_P0.json).
+> [!WARNING]
+> **HISTORICAL AND SUPERSEDED AUDIT REPORT (OCTOBER 19, 2026):**  
+> **DO NOT USE THIS DOCUMENT FOR CURRENT COMPLIANCE VERIFICATION.**  
+> This file is an archived engineering audit from an intermediate development phase (October 19, 2026). All deficiencies identified below (lack of central sandbox module, mock AI reasoning, and legacy video) have been completely resolved in the final production release. The canonical documentation, release manifest, and execution instructions are maintained in [JUDGE_START_HERE.md](./JUDGE_START_HERE.md), [README.md](./README.md), and [RELEASE_MANIFEST_P0.json](./RELEASE_MANIFEST_P0.json). The original audit log below is preserved intact for historical auditability.
 
 **Challenge:** PayPal AI Hackathon 2026 (Devpost Challenge #31302)  
 **Submission ID:** 1225851  
