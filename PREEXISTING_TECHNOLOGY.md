@@ -1,4 +1,9 @@
 # PRE-EXISTING TECHNOLOGY & IP DISCLOSURE
+
+> [!NOTE]
+> **COMPETITION IP DISCLOSURE:**  
+> This disclosure declares foundational pre-existing assets and separates them from work created specifically for the PayPal AI Hackathon 2026. Consult [JUDGE_START_HERE.md](./JUDGE_START_HERE.md) for current architecture details.
+
 **Competition:** PayPal AI Hackathon (Devpost #1225851)  
 **Project:** VELQIRIS Autonomous Agentic Payment & Dispute Guard with PayPal Developer API  
 

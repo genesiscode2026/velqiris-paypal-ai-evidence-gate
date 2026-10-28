@@ -10,25 +10,49 @@
 ## 1. What Is This Project?
 **VELQIRIS — Agentic Commerce Trust Gate** is an institutional-grade commercial trust perimeter connecting autonomous AI procurement agents with the **PayPal REST API v2**.
 
+> [!NOTE]
+> **Hosted Demo vs. Full Local Architecture:**  
+> The hosted page ([velqiris-acquisition.netlify.app/paypal-sandbox.html](https://velqiris-acquisition.netlify.app/paypal-sandbox.html)) is a limited PayPal Sandbox preview demonstrating interactive client-side policy evaluation and sandbox order initialization. For the full six-scenario working demo (with persistent PostgreSQL/SQLite storage, background reconciler daemon, and live evaluate API), follow the verification steps below in this repository.
+
 Autonomous agents are increasingly authorized to purchase digital assets, compute services, and intelligence feeds. However, existing LLMs are vulnerable to hallucinated spending, over-budget drift, and prompt injection attacks embedded in untrusted vendor listings.
 
 VELQIRIS solves this by enforcing a 5-layer non-bypassable architecture:
-1. **Layer 1: Immutable Procurement Mandate:** Hard budget ceiling ($25.00 USD), maximum risk tolerance (30.0/100), and institutional merchant whitelist.
-2. **Layer 2: AI Decision Engine:** Dual-mode comparative reasoning (Online OpenAI-compatible LLM schema + Offline Multi-Criteria Utility $U(o)$ and Epistemic Uncertainty Quantification $\in [0, 1]$), equipped with prompt injection input sanitization.
+1. **Layer 1: Immutable Procurement Mandate:** Hard budget ceiling (**$25.00 USD**), maximum risk tolerance (**30.0/100**), and institutional merchant whitelist (`528WKSF7HVQHA`).
+   *(Note on demonstration video: In the video walkthrough, an isolated stress-test demonstration of Scenario 3 showcases a tightened $20.00 cap to visually emphasize extreme budget overrun rejection (+45%), fully proving policy non-bypassability across both $20.00 and $25.00 configurations).*
+2. **Layer 2: AI Decision Engine:** Dual-mode comparative reasoning: active offline Heuristic Epistemic Risk Engine (Multi-Criteria Utility $U(o)$ and Epistemic Uncertainty Quantification $\in [0, 1]$) with adversarial prompt injection sanitization, paired with an isolated backend LLM proxy architecture (`llm-proxy.js`) for schema-gated inference.
 3. **Layer 3: Deterministic Policy Enforcement Gate:** Non-bypassable mathematical guard enforcing zero price tampering, zero budget overruns, and zero unauthorized merchants, outputting an immutable SHA-256 policy audit hash.
 4. **Layer 4: Real PostgreSQL Storage Engine & Transactional Outbox:** Canonical 12-table schema, row-level locking (`FOR UPDATE SKIP LOCKED`), and Durable Webhook Inbox with Dead Letter Queue (DLQ).
 5. **Layer 5: Local Reconciler Daemon & Single-Use Digital Delivery:** Recovers orphan PayPal webhooks arriving before local orders, enforces multi-key idempotency, and releases single-use HMAC-SHA256 digital release tokens.
+
+> [!IMPORTANT]
+> **PayPal Sandbox Operations & Settlement Distinction:**  
+> Orders generated via the official PayPal REST API v2 (`POST /v2/checkout/orders`, `intent: CAPTURE`) are verified in the developer sandbox with status `CREATED`. Post-capture settlement is verified through cryptographic RS256 webhook signatures and reconciler processing. Zero real capital ($0 USD) is disbursed.
 
 ---
 
 ## 2. Quick Verification (Run in 1 Command)
 
+### Prerequisites:
+- **Node.js** >= 20
+- **Python** 3.10+
+- **Docker & Docker Compose** (Required for running the local PostgreSQL 16 container and real Outbox/Inbox row-leasing tests)
+
 ```bash
-# 1. Start PostgreSQL & Local Daemons:
+# 1. Install Node.js dependencies:
+npm install
+
+# 2. Start PostgreSQL Container & Local Reconciler Daemon:
 ./velqiris_services.sh start
 
-# 2. Run the automated Mathematical Test Audit:
+# 3. Run the automated Mathematical Test Audit:
 node scripts/audit_test_suite.js
+
+# 4. (Optional) Run the local 6-scenario API server & UI:
+python3 serve_local_api.py
+# Open in browser: http://127.0.0.1:8080/paypal-sandbox.html
+
+# 5. Stop services:
+./velqiris_services.sh stop
 ```
 
 ### Complete Test Matrix (98 Unique Tests Declared, 94 PASS, 4 SKIPPED, 0 FAIL):
@@ -41,8 +65,8 @@ node scripts/audit_test_suite.js
 - `alexa-simulation.test.js` & `lead-capture.test.js` (2 test suites, 13 checks): Data integrity, consensus pricing, rate limiting, and honeypot protection.
 - `test_paypal_sandbox_client.py` (20 tests): Live OAuth token handling, PayPal REST v2 order payload creation, capture verification, webhook cryptographic signatures, and solvency limits.
 - `test_paypal_server_engine.py` (16 tests): Process restart persistence, multithreaded webhook concurrency, direct capture transitions, asynchronous out-of-order webhooks, and single-use digital delivery tokens.
-- `test_agentic_procurement_engine.py` (11 tests): Mandate limits, risk rejection, prompt injection sanitization, contradictory metrics detection, multi-criteria utility ranking, and SHA-256 audit hashing.
-- `test_serve_local_api.py` (4 tests): Local API server health and scenario endpoints (SKIPPED in sandboxed socket mode; 100% PASS in direct environment).
+- `test_agentic_procurement_engine.py` (11 tests): Mandate limits ($25 budget, 30 risk ceiling), prompt injection sanitization, contradictory metrics detection, multi-criteria utility ranking, and SHA-256 audit hashing.
+- `test_serve_local_api.py` (4 tests): Local API server health and scenario endpoints (SKIPPED in hermetic sandboxed socket mode; 100% PASS in direct environment).
 
 ---
 

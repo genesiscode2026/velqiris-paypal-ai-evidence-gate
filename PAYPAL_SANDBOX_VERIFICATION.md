@@ -1,4 +1,9 @@
 # VELQIRIS — PAYPAL AI DEVELOPER SANDBOX VERIFICATION REPORT
+
+> [!NOTE]
+> **HISTORICAL VERIFICATION RECORD:**  
+> This report documents the initial live sandbox order generation milestone. For the complete 98-test topology and production instructions, consult [JUDGE_START_HERE.md](./JUDGE_START_HERE.md).
+
 **Target Competition:** PayPal AI Hackathon (Devpost #1225851)  
 **Module:** `competition_submissions/paypal_ai`  
 **API Specification:** PayPal REST API v2 (`https://api-m.sandbox.paypal.com`)  

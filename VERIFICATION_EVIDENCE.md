@@ -1,4 +1,9 @@
 # VERIFICATION EVIDENCE LOG
+
+> [!NOTE]
+> **HISTORICAL EVIDENCE LOG (OCTOBER 9, 2026):**  
+> This file documents early baseline test runs from October 9, 2026. For the current, unified 98-test mathematical audit, consult [JUDGE_START_HERE.md](./JUDGE_START_HERE.md).
+
 **Project:** VELQIRIS Autonomous Agentic Payment & Dispute Guard with PayPal Developer API  
 **Timestamp:** 2026-10-09  
 

@@ -1,6 +1,10 @@
 # VELQIRIS — PAYPAL AI HACKATHON 2026
 ## GATE P0-A: ATOMIC REPOSITORY AUDIT REPORT
 
+> [!NOTE]
+> **HISTORICAL ENGINEERING AUDIT RECORD:**  
+> This document records intermediate findings from the early P0 engineering audit phase prior to final release hardening. For canonical release parameters ($25 budget, 30 risk), verified test results (94 PASS / 0 FAIL), and official judge instructions, consult [JUDGE_START_HERE.md](./JUDGE_START_HERE.md), [README.md](./README.md), and [RELEASE_MANIFEST_P0.json](./RELEASE_MANIFEST_P0.json).
+
 **Date:** 2026-10-28  
 **Auditor:** Antigravity — Lead Systems Architect & Implementation Engineer  
 **Reviewer:** ChatGPT — Principal Engineer & Senior Technical Reviewer  
