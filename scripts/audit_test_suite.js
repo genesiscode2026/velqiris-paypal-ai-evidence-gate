@@ -98,6 +98,20 @@ const TEST_REGISTRY = [
     filePath: "test_serve_local_api.py",
     type: "PYTHON",
     isRealPostgres: false
+  },
+  // Category 9: Real PostgreSQL Scenarios 5 & 6 Runner
+  {
+    category: "Real PostgreSQL Scenarios 5 & 6 (Runner)",
+    filePath: "test/postgres-scenarios-5-6.test.js",
+    type: "NODE",
+    isRealPostgres: false
+  },
+  // Category 10: Local Neural AI Pipeline & Proof
+  {
+    category: "Local Neural AI Pipeline & Proof",
+    filePath: "test/local-ai-inference.test.js",
+    type: "NODE",
+    isRealPostgres: false
   }
 ];
 
@@ -173,9 +187,16 @@ function runAudit() {
     let notExecuted = 0;
     let execOutput = "";
 
+    const testEnv = { ...env };
+    if (!entry.isRealPostgres) {
+      delete testEnv.DATABASE_URL;
+    } else if (!testEnv.DATABASE_URL) {
+      testEnv.DATABASE_URL = "postgres://postgres:postgres@localhost:5432/velqiris_test_db";
+    }
+
     try {
       if (entry.type === "NODE") {
-        execOutput = execSync(`node --test "${fullPath}"`, { encoding: "utf-8", env, cwd: ROOT });
+        execOutput = execSync(`node --test "${fullPath}"`, { encoding: "utf-8", env: testEnv, cwd: ROOT });
         const passMatch = execOutput.match(/ℹ pass (\d+)/);
         const failMatch = execOutput.match(/ℹ fail (\d+)/);
         pass = passMatch ? parseInt(passMatch[1], 10) : 0;
@@ -242,7 +263,7 @@ function runAudit() {
   for (const r of results) {
     console.log(`| **${r.category}** | \`${r.file}\` | ${r.isRealPostgres ? 'DA' : 'NU'} | ${r.declared} | **${r.pass}** | ${r.fail} | ${r.skipped} | ${r.notExecuted} |`);
   }
-  console.log(`| **BILANȚ TOTAL UNIC (ZERO DUBLĂ NUMĂRARE)** | **13 Fișiere Test** | **2 Suite PG** | **${totalUniqueDeclared}** | **${totalUniquePass}** | **${totalUniqueFail}** | **${totalUniqueSkipped}** | **${totalUniqueNotExecuted}** |\n`);
+  console.log(`| **BILANȚ TOTAL UNIC (ZERO DUBLĂ NUMĂRARE)** | **${TEST_REGISTRY.length} Fișiere Test** | **2 Suite PG** | **${totalUniqueDeclared}** | **${totalUniquePass}** | **${totalUniqueFail}** | **${totalUniqueSkipped}** | **${totalUniqueNotExecuted}** |\n`);
 
   console.log("MATHEMATICAL VERIFICATION:");
   console.log(`Total Unic Declarat: ${totalUniqueDeclared}`);

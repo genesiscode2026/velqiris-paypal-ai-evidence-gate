@@ -618,6 +618,8 @@ async function executeCurrentScenario() {
       `[+] DETERMINISTIC POLICY ENFORCEMENT VERDICT:\n` +
       `Verdict Code: ${pol.verdict_code}\n` +
       `Approved: ${pol.approved ? 'YES (AUTHORIZED)' : 'NO (HALTED FAIL-CLOSED)'}\n` +
+      (liveData.label ? `Execution Tier: ${liveData.label}\n` : '') +
+      (liveData.database_evidence ? `PostgreSQL Ground-Truth Verification:\n${JSON.stringify(liveData.database_evidence, null, 2)}\n` : '') +
       (pol.policy_audit_sha256 ? `Policy Audit SHA-256: ${pol.policy_audit_sha256}\n` : '') +
       (pol.authorized_order_spec ? 
         `PayPal Order Spec Locked:\n${JSON.stringify(pol.authorized_order_spec, null, 2)}\n` : 

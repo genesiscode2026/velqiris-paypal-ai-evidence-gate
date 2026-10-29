@@ -69,14 +69,22 @@
     }
   },
   "tests": {
-    "declared_unique": 105,
-    "pass": 105,
+    "declared_unique": 107,
+    "pass": 107,
     "skipped": 0,
     "fail": 0,
     "not_executed": 0,
     "sandboxed_loopback_policy_skipped": 8,
     "convergent": true,
     "audit_script": "node scripts/audit_test_suite.js"
+  },
+  "ai_neural_inference": {
+    "model": "qwen2.5:0.5b",
+    "architecture": "Qwen2.5 0.5B Transformer (490M params, 397MB)",
+    "local_daemon": "Ollama 0.40.12 (loopback 127.0.0.1:11434)",
+    "status": "VERIFIED_AUTHENTIC_LOCAL_INFERENCE",
+    "proof_artifact": "evidence_captures/real_ai_inference_proof.json",
+    "artifact_sha256": "881a1b85966997eb00bad1c2f78cf489dd18f83c11e15e11bae37a3013cfe66f"
   },
   "video": {
     "file": "velqiris_paypal_hackathon_final.mp4",

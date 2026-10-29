@@ -59,13 +59,59 @@ cmd_start() {
   fi
 
   # 4. Start Local Trust Gate API Server
-  if [ -f "$SERVER_PID_FILE" ] && kill -0 "$(cat "$SERVER_PID_FILE")" 2>/dev/null; then
-    echo "[+] Local API server already running with PID $(cat "$SERVER_PID_FILE")."
+  PORT_STATUS=$(python3 -c '
+import sys, socket, urllib.request, json
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.settimeout(0.5)
+res = s.connect_ex(("127.0.0.1", 8080))
+s.close()
+if res == 0:
+    try:
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        req = urllib.request.Request("http://127.0.0.1:8080/health")
+        with opener.open(req, timeout=1.0) as resp:
+            data = json.loads(resp.read().decode())
+            if "VELQIRIS" in str(data):
+                sys.exit(0)
+    except Exception:
+        pass
+    sys.exit(2)
+sys.exit(1)
+' 2>/dev/null; echo $?)
+
+  if [ "$PORT_STATUS" -eq 0 ]; then
+    PID=""
+    [ -f "$SERVER_PID_FILE" ] && PID=" (PID: $(cat "$SERVER_PID_FILE"))"
+    echo "[+] Local API server is already running and healthy on port 8080$PID."
+  elif [ "$PORT_STATUS" -eq 2 ]; then
+    echo "[ERROR] Port 8080 is occupied by another non-VELQIRIS process. Aborting without terminating foreign process."
+    exit 1
   else
     echo "[*] Starting Local API Server (port 8080)..."
     python3 "$BASE_DIR/serve_local_api.py" >> "$BASE_DIR/server.log" 2>&1 &
     echo $! > "$SERVER_PID_FILE"
-    echo "[+] Local API Server started with PID $(cat "$SERVER_PID_FILE")."
+
+    READY=0
+    for i in {1..10}; do
+      sleep 0.5
+      if python3 -c '
+import sys, urllib.request
+try:
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    with opener.open("http://127.0.0.1:8080/health", timeout=0.5) as resp:
+        if resp.status == 200: sys.exit(0)
+except Exception:
+    sys.exit(1)
+' 2>/dev/null; then
+        READY=1
+        break
+      fi
+    done
+    if [ "$READY" -eq 1 ]; then
+      echo "[+] Local API Server started with PID $(cat "$SERVER_PID_FILE") and verified healthy."
+    else
+      echo "[+] Local API Server process launched with PID $(cat "$SERVER_PID_FILE")."
+    fi
   fi
 
   echo "=== [VELQIRIS] All Services Successfully Started ==="
@@ -121,8 +167,20 @@ cmd_health() {
 
   # API Server Check
   SRV_STATUS="STOPPED"
-  if [ -f "$SERVER_PID_FILE" ] && kill -0 "$(cat "$SERVER_PID_FILE")" 2>/dev/null; then
-    SRV_STATUS="RUNNING (PID: $(cat "$SERVER_PID_FILE"))"
+  if python3 -c '
+import sys, urllib.request
+try:
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    with opener.open("http://127.0.0.1:8080/health", timeout=0.8) as resp:
+        if resp.status == 200: sys.exit(0)
+except Exception:
+    sys.exit(1)
+' 2>/dev/null; then
+    PID=""
+    [ -f "$SERVER_PID_FILE" ] && PID=" (PID: $(cat "$SERVER_PID_FILE"))"
+    SRV_STATUS="HEALTHY$PID"
+  elif [ -f "$SERVER_PID_FILE" ] && kill -0 "$(cat "$SERVER_PID_FILE")" 2>/dev/null; then
+    SRV_STATUS="RUNNING (PID: $(cat "$SERVER_PID_FILE"), /health pending)"
   fi
   echo "[+] Local API Server: $SRV_STATUS"
 }

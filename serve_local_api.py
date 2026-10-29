@@ -10,6 +10,7 @@ import sys
 import json
 import time
 import argparse
+import subprocess
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, unquote
 
@@ -325,6 +326,27 @@ class TrustGateAPIHandler(BaseHTTPRequestHandler):
                     "message": "Policy gate halted execution fail-closed ($0 disbursed).",
                 }
 
+            # P0-03: Real PostgreSQL Scenario Execution Bridge
+            pg_evidence = None
+            if scenario_id in (5, 6):
+                runner_path = os.path.join(SCRIPT_DIR, "scripts", "run_real_postgres_scenarios.js")
+                if os.path.exists(runner_path):
+                    try:
+                        proc = subprocess.run(
+                            ["node", runner_path, "--scenario", str(scenario_id)],
+                            capture_output=True,
+                            text=True,
+                            timeout=6,
+                            shell=False,
+                            cwd=SCRIPT_DIR,
+                        )
+                        if proc.returncode == 0:
+                            parsed_pg = json.loads(proc.stdout)
+                            if parsed_pg.get("success"):
+                                pg_evidence = parsed_pg
+                    except Exception:
+                        pass
+
             duration_ms = round((time.time() - start_ts) * 1000, 2)
             response_data = {
                 "scenario_id": scenario_id,
@@ -337,6 +359,15 @@ class TrustGateAPIHandler(BaseHTTPRequestHandler):
                 "policy_verdict": policy_verdict,
                 "delivery_result": delivery_result,
             }
+
+            if pg_evidence:
+                response_data["real_postgres_executed"] = True
+                response_data["label"] = pg_evidence.get("label", "SYNTHETIC WEBHOOK — REAL POSTGRESQL RECONCILIATION")
+                response_data["database_evidence"] = pg_evidence.get("database_evidence")
+                policy_verdict["database_evidence"] = pg_evidence.get("database_evidence")
+            elif scenario_id in (5, 6):
+                response_data["real_postgres_executed"] = False
+                response_data["label"] = "SYNTHETIC TEST — LOCAL SIMULATION (PostgreSQL offline/sandboxed)"
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")

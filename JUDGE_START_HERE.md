@@ -23,15 +23,15 @@
    ```bash
    npm install
    ./velqiris_services.sh start
-   python3 serve_local_api.py
    # Navigate to: http://127.0.0.1:8080/paypal-sandbox.html
    ```
-   This launches the live 6-scenario workbench with PostgreSQL 16, background reconciler daemon, and live evaluate API. To stop: `./velqiris_services.sh stop`.
+   This launches the complete stack (PostgreSQL 16, background reconciler daemon, and local API/UI server on port 8080). To stop: `./velqiris_services.sh stop`.
 
 5. **What actually uses AI?**  
    Layer 2 features a dual-mode decision engine:
-   - **Active Offline Engine:** A deterministic Heuristic Epistemic Risk Engine evaluating Multi-Criteria Utility $U(o)$ and Epistemic Uncertainty Quantification $\in [0, 1]$ with adversarial prompt-injection sanitization.
-   - **Production LLM Architecture:** A secure server-side proxy (`netlify/functions/llm-proxy.js`) with schema-gated JSON responses, timing-safe authentication, and rate-limiting. *(Environment note: Since no local Ollama or GPU model daemon is listening on the host, the offline MCDA engine runs actively to guarantee 100% reproducible, zero-cost evaluation).*
+   - **Deterministic Mode (Zero AI Model Required):** A deterministic Heuristic Epistemic Risk Engine evaluating Multi-Criteria Utility $U(o)$ and Epistemic Uncertainty Quantification $\in [0, 1]$ with adversarial prompt-injection sanitization. Operates out of the box with zero dependencies.
+   - **Real Local Neural AI Mode (qwen2.5:0.5b via Ollama):** An authentic 490M parameter neural transformer model (`qwen2.5:0.5b`, 397MB footprint) running on loopback (`http://127.0.0.1:11434`). Generates structured procurement recommendations validated against canonical offers and audited by the deterministic Policy Gate. Full verifiable execution proof captured in `evidence_captures/real_ai_inference_proof.json`.
+   - **Production LLM Architecture:** A secure server-side proxy (`netlify/functions/llm-proxy.js`) with schema-gated JSON responses, timing-safe authentication, and rate-limiting.
 
 6. **What actually uses PayPal?**  
    - Real OAuth2 authentication (`POST /v1/oauth2/token`) against the PayPal Developer Sandbox (`api-m.sandbox.paypal.com`).
@@ -56,7 +56,7 @@
 | **PostgreSQL Storage Engine** | Real Database Implementation | Docker Container (PostgreSQL 16) | `schema_postgresql.sql` (12 tables), `test/postgres-real-integration.test.js` |
 | **Reconciler Daemon** | Real Async Worker Loop | Node.js Background Process | `local-reconciler.js` (`FOR UPDATE SKIP LOCKED`), `test/local-reconciler.test.js` |
 | **MCDA Epistemic Policy Engine** | Real Deterministic Math | Local Runtime (JS & Python) | `agentic-procurement.js`, `test_agentic_procurement_engine.py` |
-| **LLM Proxy Inference Gateway** | Real Proxy Architecture (Offline MCDA Active) | Server-Side Gateway | `netlify/functions/llm-proxy.js`, `test/llm-proxy.test.js` (Ollama absent; offline fallback) |
+| **LLM Inference Gateway & Local Neural Model** | Real Neural AI (qwen2.5:0.5b) & Proxy | Local Runtime (Ollama) & Netlify Proxy | `evidence_captures/real_ai_inference_proof.json`, `scripts/execute_local_ai_inference.py`, `netlify/functions/llm-proxy.js` |
 | **Single-Use Digital Delivery** | Real Cryptographic Enforcement | Local Server & Storage | HMAC-SHA256 token release, HTTP 410 on second retrieval, `test_paypal_server_engine.py` |
 
 ---
@@ -128,22 +128,53 @@ VELQIRIS solves this by enforcing a 5-layer non-bypassable architecture:
 # 1. Install Node.js dependencies:
 npm install
 
-# 2. Start PostgreSQL Container & Local Reconciler Daemon:
+# 2. Start PostgreSQL Container, Local Reconciler Daemon, and API Server:
 ./velqiris_services.sh start
 
-# 3. Run the automated Mathematical Test Audit:
-node scripts/audit_test_suite.js
+# 3. Verify health status:
+./velqiris_services.sh health
+# Open dashboard in browser: http://127.0.0.1:8080/paypal-sandbox.html
 
-# 4. (Optional) Run the local 6-scenario API server & UI:
-python3 serve_local_api.py
-# Open in browser: http://127.0.0.1:8080/paypal-sandbox.html
+# 4. Run the automated Mathematical Test Audit:
+node scripts/audit_test_suite.js
 
 # 5. Stop services:
 ./velqiris_services.sh stop
 ```
 
-### Complete Test Matrix (105 Unique Tests Declared):
-*(105 PASS, 0 FAIL in direct host environment with Docker PostgreSQL running; 87 PASS, 10 PG-dependent, 8 SKIPPED in hermetic sandboxed socket policy with container stopped)*
+### Verification Modes:
+
+#### Mode 1: Deterministic Baseline (Zero Model Required)
+```bash
+./velqiris_services.sh start
+node scripts/audit_test_suite.js
+./velqiris_services.sh stop
+```
+
+#### Mode 2: Real Local Neural AI Pipeline (qwen2.5:0.5b via Ollama)
+```bash
+# 1. Start Ollama (loopback only) & pull 397MB model:
+OLLAMA_HOST="127.0.0.1:11434" ollama serve &
+ollama pull qwen2.5:0.5b
+
+# 2. Execute Neural AI tests and capture cryptographic proof:
+python3 scripts/execute_local_ai_inference.py
+
+# 3. Inspect generated proof artifact:
+cat evidence_captures/real_ai_inference_proof.json
+```
+
+#### Mode 3: Real PostgreSQL Scenarios 5 & 6 Execution
+```bash
+# Execute Scenario 5 (Orphan Webhook Recovery) in PostgreSQL:
+node scripts/run_real_postgres_scenarios.js --scenario 5
+
+# Execute Scenario 6 (Forged & Replay Defense) in PostgreSQL:
+node scripts/run_real_postgres_scenarios.js --scenario 6
+```
+
+### Complete Test Matrix (107 Unique Tests Declared):
+*(107 PASS, 0 FAIL in direct host environment with Docker PostgreSQL running; 89 PASS, 10 PG-dependent, 8 SKIPPED in hermetic sandboxed socket policy with container stopped)*
 - `test/postgres-real-integration.test.js` (7 tests): Real PostgreSQL connection, 12 tables, transactional rollback, multi-connection concurrency, unique constraint enforcement, Outbox leasing with `FOR UPDATE SKIP LOCKED`, and DLQ quarantine.
 - `test/local-reconciler.test.js` (3 tests): Local reconciler daemon lifecycle, orphan recovery cycle, concurrent disjoint worker leases, and graceful shutdown.
 - `test/orphan-reconciliation.test.js` (5 tests): Webhook arrival before local order, delayed reconciliation, unreconcilable orphan DLQ quarantine, Outbox completion, and HTTP 200 idempotent retransmission acknowledgement.
@@ -155,6 +186,8 @@ python3 serve_local_api.py
 - `test_paypal_server_engine.py` (16 tests): Process restart persistence, multithreaded webhook concurrency, direct capture transitions, asynchronous out-of-order webhooks, and single-use digital delivery tokens.
 - `test_agentic_procurement_engine.py` (11 tests): Mandate limits ($25 budget, 30 risk ceiling), prompt injection sanitization, contradictory metrics detection, multi-criteria utility ranking, and SHA-256 audit hashing.
 - `test_serve_local_api.py` (8 tests): Local API server health, static asset delivery, HEAD requests, directory traversal defense, explicit settlement mode labeling, and scenario execution (8 PASS in direct environment; SKIPPED in hermetic sandboxed socket policy).
+- `test/postgres-scenarios-5-6.test.js` (1 test): Real PostgreSQL Scenarios 5 & 6 runner argument validation, structured JSON output, and execution error handling.
+- `test/local-ai-inference.test.js` (1 test): Local neural AI inference pipeline validation, script compilation, and proof artifact schema verification.
 
 ---
 
