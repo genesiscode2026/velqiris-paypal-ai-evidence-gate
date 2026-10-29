@@ -10,8 +10,11 @@ const assert = require("node:assert/strict");
 const crypto = require("crypto");
 
 const { storage, MemoryStorageAdapter } = require("../netlify/functions/storage-adapter.js");
-const { handler: webhookHandler, isValidPayPalCertUrl, computeCrc32 } = require("../netlify/functions/paypal-webhook.js");
+const { handler: webhookHandler, setTestVerifier, resetTestVerifier, isValidPayPalCertUrl, computeCrc32 } = require("../netlify/functions/paypal-webhook.js");
 const { evaluateProcurement, handler: procurementHandler } = require("../netlify/functions/agentic-procurement.js");
+
+// Initialize programmatic test verifier for test harness (inaccessible via public HTTP)
+setTestVerifier(async () => ({ ok: true, method: "LOCAL_TEST_HARNESS_VERIFIED" }));
 
 // Reset storage before test suite
 test.beforeEach(() => {
@@ -36,8 +39,7 @@ test("TEST 1: Două instanțe serverless concurente procesează același webhook
         status: "COMPLETED",
         amount: { value: "19.00", currency_code: "USD" },
         custom_id: "POL_HASH_ATTESTED"
-      },
-      _test_mock_verified: true
+      }
     })
   };
 
@@ -68,8 +70,7 @@ test("TEST 2: Aceeași captură retransmisă cu transmission-id diferit este ded
         id: "CAP-DUPE-CHECK-002",
         status: "COMPLETED",
         amount: { value: "19.00", currency_code: "USD" }
-      },
-      _test_mock_verified: true
+      }
     })
   };
   const res1 = await webhookHandler(req1);
@@ -174,21 +175,27 @@ test("TEST 6: Clientul încearcă să trimită status SETTLEMENT_VERIFIED (respi
 // TEST 7: Webhook conține semnătură invalidă
 // ==============================================================================
 test("TEST 7: Webhook cu semnătură invalidă sau netestată este respins fail-closed (401)", async () => {
+  resetTestVerifier(); // Clear test verifier to exercise real verification gate
   const req = {
     httpMethod: "POST",
     headers: {
       "paypal-transmission-id": "TX-FORGED-007",
       "paypal-transmission-time": "2026-10-28T20:00:00Z",
       "paypal-cert-url": "https://api.sandbox.paypal.com/v1/cert"
-      // Nu are _test_mock_verified și nu are credențiale valide
+      // Attempting client-controlled bypass
     },
     body: JSON.stringify({
       event_type: "PAYMENT.CAPTURE.COMPLETED",
-      resource: { id: "CAP-FORGED-007" }
+      resource: { id: "CAP-FORGED-007" },
+      _test_mock_verified: true
     })
   };
   const res = await webhookHandler(req);
   assert.equal(res.statusCode, 401);
+  const data = JSON.parse(res.body);
+  assert.equal(data.error, "CRYPTOGRAPHIC_SIGNATURE_INVALID");
+  // Restore test verifier for remaining unit tests
+  setTestVerifier(async () => ({ ok: true, method: "LOCAL_TEST_HARNESS_VERIFIED" }));
 });
 
 // ==============================================================================
@@ -208,8 +215,7 @@ test("TEST 8: Webhook verificat cu sumă modificată ($1.00 în loc de $19.00) e
         id: "CAP-TAMPER-008",
         status: "COMPLETED",
         amount: { value: "1.00", currency_code: "USD" } // Modificat din 19.00 în 1.00!
-      },
-      _test_mock_verified: true
+      }
     })
   };
   const res = await webhookHandler(req);
@@ -291,8 +297,7 @@ test("TEST 13: Webhook PAYMENT.CAPTURE.DENIED este înregistrat și nu deblochea
       resource: {
         id: "CAP-DENIED-013",
         amount: { value: "19.00", currency_code: "USD" }
-      },
-      _test_mock_verified: true
+      }
     })
   };
   const res = await webhookHandler(req);

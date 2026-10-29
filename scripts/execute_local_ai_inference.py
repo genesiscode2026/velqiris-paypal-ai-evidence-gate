@@ -111,7 +111,8 @@ def run_ai_inference_pipeline():
         "- OFFER-BETA-02: Price $16.00 USD, Risk Score 78.5 (VIOLATION: Risk 78.5 exceeds 30.0 max tolerance)\n"
         "- OFFER-GAMMA-03: Price $29.00 USD, Risk Score 4.5 (VIOLATION: Price $29 exceeds $25.00 max budget)\n\n"
         "Analyze the offers and select the compliant offer satisfying both constraints. "
-        "Respond with strictly valid JSON: {\"recommended_offer_id\": \"OFFER-...\", \"confidence_score\": 0.95, \"decision_rationale\": \"...\"}"
+        "Respond with strictly valid JSON having keys 'recommended_offer_id', 'confidence_score', and 'decision_rationale'. "
+        "Write a genuine rationale explaining why the selected offer satisfies the constraints. Do not output ellipsis or placeholder dots."
     )
 
     t1_res = query_local_ollama([

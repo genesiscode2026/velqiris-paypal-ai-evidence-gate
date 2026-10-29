@@ -379,7 +379,7 @@
   </div>
 
   <div class="notice">
-    🔒 <strong>Security Policy:</strong> This dashboard executes strictly in Developer Sandbox / Demonstration Mode. Zero real funds are used.
+    🔒 <strong>Security & Execution Notice:</strong> This interactive workbench executes strictly in Developer Sandbox / Demonstration Mode ($0 real funds). When hosted on Netlify, it functions as an <em>Interactive Limited Sandbox Preview</em>. Full enterprise orchestration with local neural LLM inference (Qwen2.5:0.5B via Ollama), real Docker PostgreSQL durable inbox/outbox, and async webhook reconciliation runs locally via <code>./velqiris_services.sh start</code> (see <a href="https://github.com/genesiscode2026/velqiris-paypal-ai-evidence-gate" target="_blank" style="color:var(--cyan); text-decoration:underline;">GitHub Repository</a>).
   </div>
 </main>
 
@@ -604,18 +604,27 @@ async function executeCurrentScenario() {
     document.getElementById("paypal-badge").className = del.delivered ? "pill pill-amber" : "pill pill-bad";
     document.getElementById("paypal-badge").textContent = del.delivered ? "DEMO SIMULATED SETTLEMENT ($0 FUNDS)" : "FAIL-CLOSED ($0)";
 
+    const isOverruled = Boolean(liveData.ai_overruled_by_policy || pol.ai_overruled_by_policy_gate);
+    const overruledIndicator = isOverruled 
+      ? `[!] AI OVERRULED BY POLICY GATE: YES (FAIL-CLOSED) — Autonomous agent recommendation overridden by hard perimeter ($0 disbursed).\n` 
+      : (pol.approved ? `[+] AI RECOMMENDATION VALIDATED BY POLICY GATE: YES (COMPLIANT)\n` : '');
+
     document.getElementById("ai-rationale").textContent = 
       `[+] LIVE AGENTIC DECISION (${liveData.execution_time_ms} ms):\n` +
+      `Model: ${ai.model || 'qwen2.5:0.5b'}\n` +
       `Engine Mode: ${ai.engine_mode}\n` +
+      (ai.inference_latency_ms ? `Neural Inference Latency: ${ai.inference_latency_ms} ms\n` : '') +
       `Status: ${ai.status}\n` +
       `Recommended Offer: ${ai.recommended_offer_id || 'NONE'} (${ai.recommended_vendor || 'N/A'})\n` +
-      (ai.confidence_score ? `Confidence: ${(ai.confidence_score * 100).toFixed(1)}% | Uncertainty: ${(ai.uncertainty_score * 100).toFixed(1)}%\n` : '') +
+      (ai.canonical_verified ? `Canonical Catalog Lookup: Verified (Price: $${ai.canonical_price_usd.toFixed(2)}, Risk: ${ai.canonical_risk_score.toFixed(1)})\n` : '') +
+      (ai.confidence_score ? `Confidence: ${(ai.confidence_score * 100).toFixed(1)}% | Uncertainty: ${((ai.uncertainty_score || 0.05) * 100).toFixed(1)}%\n` : '') +
       (ai.utility_score ? `Multi-Criteria Utility: ${ai.utility_score}\n` : '') +
       (ai.injection_detected ? `[!] SECURITY ALERT: Hostile injection payload neutralized in input telemetry!\n` : '') +
       `Rationale:\n${ai.decision_rationale}`;
 
     document.getElementById("policy-output").textContent = 
       `[+] DETERMINISTIC POLICY ENFORCEMENT VERDICT:\n` +
+      overruledIndicator +
       `Verdict Code: ${pol.verdict_code}\n` +
       `Approved: ${pol.approved ? 'YES (AUTHORIZED)' : 'NO (HALTED FAIL-CLOSED)'}\n` +
       (liveData.label ? `Execution Tier: ${liveData.label}\n` : '') +

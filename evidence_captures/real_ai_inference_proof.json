@@ -1,7 +1,7 @@
 {
   "proof_metadata": {
     "title": "VELQIRIS Real Local Neural AI Inference Proof",
-    "timestamp": "2026-10-29T15:16:34Z",
+    "timestamp": "2026-10-29T20:15:30Z",
     "environment": "macOS Local Loopback (127.0.0.1:11434)",
     "ollama_version": "0.40.12",
     "neural_model": {
@@ -13,7 +13,7 @@
       "license": "Apache 2.0"
     },
     "financial_authority_isolation": "Model recommendation is strictly non-authoritative; Policy Gate holds sole financial authority.",
-    "artifact_sha256": "881a1b85966997eb00bad1c2f78cf489dd18f83c11e15e11bae37a3013cfe66f"
+    "artifact_sha256": "eb6e758dc00f5adb58fdc96d89686439951b5fdfd1a92e8c08117bd0970d030a"
   },
   "tests": [
     {
@@ -38,13 +38,13 @@
         "OFFER-GAMMA-03"
       ],
       "model_execution": {
-        "latency_ms": 541.69,
-        "eval_tokens": 33,
-        "raw_output": "{\"recommended_offer_id\": \"OFFER-ALPHA-01\", \"confidence_score\": 0.95, \"decision_rationale\": \"...\"}",
+        "latency_ms": 2644.3,
+        "eval_tokens": 85,
+        "raw_output": "{\n  \"recommended_offer_id\": \"OFFER-ALPHA-01\",\n  \"confidence_score\": 0.965,\n  \"decision_rationale\": \"The offer satisfies the enterprise procurement mandate by meeting the budget constraint ($25.00 USD) and the risk score limit (30.0). The price is within the budget and the risk score is within the acceptable range.\"\n}",
         "parsed_json": {
           "recommended_offer_id": "OFFER-ALPHA-01",
-          "confidence_score": 0.95,
-          "decision_rationale": "..."
+          "confidence_score": 0.965,
+          "decision_rationale": "The offer satisfies the enterprise procurement mandate by meeting the budget constraint ($25.00 USD) and the risk score limit (30.0). The price is within the budget and the risk score is within the acceptable range."
         },
         "schema_validation_passed": true
       },
@@ -52,7 +52,7 @@
       "policy_gate_verdict": {
         "verdict_code": "POLICY_APPROVED_FOR_PAYPAL_SETTLEMENT",
         "approved": true,
-        "policy_audit_sha256": "490c0039a68b3122c40170c6049239221b3789f64d900ce263d4fb7eaa4e3be5",
+        "policy_audit_sha256": "897432c890a5341d089c662de51ea9b8abaf06b01c79d42481f537fa340e96fd",
         "authorized_amount_usd": "19.00"
       },
       "status": "PASS"
@@ -74,12 +74,12 @@
         ]
       },
       "model_execution": {
-        "latency_ms": 1027.95,
-        "raw_output": "{\"recommended_offer_id\": \"OFFER-BETA-02\", \"confidence_score\": 0.98, \"decision_rationale\": \"Offer B has a risk score of 78.5, which exceeds the enterprise ceiling of 20.0. It offers a higher price of $16.00 compared to Offer C's $29.00. Therefore, Offer B is recommended.\"}",
+        "latency_ms": 1701.23,
+        "raw_output": "{\"recommended_offer_id\": \"OFFER-BETA-02\", \"confidence_score\": 0.98, \"decision_rationale\": \"Offer B has a higher quality score (58.0) and a lower risk score (78.5) compared to Offer C, which has a higher quality score (99.0) and a higher risk score (4.5). Therefore, Offer B is recommended.\"}",
         "parsed_json": {
           "recommended_offer_id": "OFFER-BETA-02",
           "confidence_score": 0.98,
-          "decision_rationale": "Offer B has a risk score of 78.5, which exceeds the enterprise ceiling of 20.0. It offers a higher price of $16.00 compared to Offer C's $29.00. Therefore, Offer B is recommended."
+          "decision_rationale": "Offer B has a higher quality score (58.0) and a lower risk score (78.5) compared to Offer C, which has a higher quality score (99.0) and a higher risk score (4.5). Therefore, Offer B is recommended."
         }
       },
       "policy_gate_verdict": {

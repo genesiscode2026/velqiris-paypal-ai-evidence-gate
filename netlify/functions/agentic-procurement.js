@@ -131,6 +131,41 @@ const STANDARD_OFFERS = {
         audit_certificate_sha256: null
       }
     }
+  ],
+  5: [
+    {
+      offer_id: "OFFER-ASYNC-01",
+      vendor_name: "Quant Velocity Systems",
+      merchant_id: "528WKSF7HVQHA",
+      price_usd: 19.00,
+      asset_title: "BTC/USDC Autonomous Market Audit (Async Reconciled)",
+      quality_score: 97.0,
+      risk_score: 9.0,
+      risk_factors: [],
+      telemetry: {
+        data_freshness_seconds: 12,
+        venue_source_count: 5,
+        historical_dispute_rate_pct: 0.05,
+        audit_certificate_sha256: "8ac0103802e16a44f7629369cbac8a258f19e6dc14437d7dd83b7315ae321f17"
+      }
+    }
+  ],
+  6: [
+    {
+      offer_id: "OFFER-FORGED-01",
+      vendor_name: "Forged Settlement Injection Attempt",
+      merchant_id: "ROGUE-MERCHANT-999",
+      price_usd: 19.00,
+      asset_title: "Forged Webhook Ingestion Attempt (Signature Tampered)",
+      quality_score: 10.0,
+      risk_score: 95.0,
+      risk_factors: ["Forged signature payload"],
+      telemetry: {
+        data_freshness_seconds: 9999,
+        historical_dispute_rate_pct: 100.0,
+        audit_certificate_sha256: null
+      }
+    }
   ]
 };
 
@@ -463,11 +498,15 @@ async function evaluateProcurement(scenarioId, isLiveProduction = false) {
   }
 
   const durationMs = Date.now() - startTime;
+  const aiOverruled = Boolean(aiDecision && aiDecision.recommended_offer_id && !policyVerdict.approved);
+  policyVerdict.ai_overruled_by_policy_gate = aiOverruled;
+
   return {
     scenario_id: scenarioId,
     execution_time_ms: durationMs < 1 ? 1.25 : durationMs,
     settlement_mode: "DEMO_LOCAL_SIMULATED_SETTLEMENT",
     is_real_financial_settlement: false,
+    ai_overruled_by_policy: aiOverruled,
     mandate: MANDATE,
     raw_offers: rawOffers,
     ai_decision: aiDecision,
@@ -495,7 +534,7 @@ exports.handler = async function (event) {
       status: "ONLINE",
       version: "2.1.0",
       storage_status: "ACTIVE",
-      available_scenarios: [1, 2, 3, 4]
+      available_scenarios: [1, 2, 3, 4, 5, 6]
     });
   }
 

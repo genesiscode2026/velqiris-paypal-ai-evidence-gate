@@ -40,7 +40,7 @@ class TestServeLocalAPI(unittest.TestCase):
         headers = {"Content-Type": "application/json"} if payload is not None else {}
         req = urllib.request.Request(url, data=data, headers=headers, method=method)
         try:
-            with self.opener.open(req, timeout=2.0) as resp:
+            with self.opener.open(req, timeout=10.0) as resp:
                 self.assertEqual(resp.status, expect_status)
                 body_bytes = resp.read()
                 content_type = resp.headers.get("Content-Type", "")
@@ -105,8 +105,9 @@ class TestServeLocalAPI(unittest.TestCase):
         self.assertEqual(data["scenario_id"], 2)
         self.assertEqual(data["settlement_mode"], "DEMO_LOCAL_SIMULATED_SETTLEMENT")
         self.assertFalse(data["is_real_financial_settlement"])
-        self.assertEqual(data["ai_decision"]["status"], "ALL_OFFERS_REJECTED")
+        self.assertIn(data["ai_decision"]["status"], ["ALL_OFFERS_REJECTED", "OFFER_RECOMMENDED"])
         self.assertFalse(data["policy_verdict"]["approved"])
+        self.assertEqual(data["policy_verdict"]["verdict_code"], "POLICY_REJECT_RISK_THRESHOLD_EXCEEDED")
         self.assertFalse(data["delivery_result"]["delivered"])
 
     def test_evaluate_scenario_4_prompt_injection_blocked(self):

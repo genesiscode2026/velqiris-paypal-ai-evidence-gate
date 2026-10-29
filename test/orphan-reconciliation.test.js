@@ -1,8 +1,13 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { handler: webhookHandler } = require("../netlify/functions/paypal-webhook");
+const { createWebhookHandler } = require("../netlify/functions/paypal-webhook");
 const { handler: workerHandler } = require("../netlify/functions/reconcile-worker");
 const { MemoryStorageAdapter } = require("../netlify/functions/storage-adapter");
+
+// Programmatic test harness handler with injected verifier (no HTTP-controllable bypass)
+const webhookHandler = createWebhookHandler({
+  verifier: async () => ({ ok: true, method: "LOCAL_TEST_HARNESS_VERIFIED" })
+});
 
 test("GATE W: Orphan Webhook arrives before local order creation -> returns 202 PENDING_RECONCILIATION without delivery token", async () => {
   const orphanOrderId = "ORD-ORPHAN-001";
@@ -10,7 +15,10 @@ test("GATE W: Orphan Webhook arrives before local order creation -> returns 202 
     httpMethod: "POST",
     headers: {
       "paypal-transmission-id": "TX-ORPHAN-ARRIVAL-001",
-      "paypal-transmission-time": "2026-10-28T21:00:00Z"
+      "paypal-transmission-time": "2026-10-28T21:00:00Z",
+      "paypal-transmission-sig": "test_sig_mock",
+      "paypal-cert-url": "https://api.sandbox.paypal.com/v1/cert",
+      "paypal-auth-algo": "SHA256withRSA"
     },
     body: JSON.stringify({
       id: "WH-EVT-ORPHAN-001",
@@ -21,8 +29,7 @@ test("GATE W: Orphan Webhook arrives before local order creation -> returns 202 
         amount: { value: "19.00", currency_code: "USD" },
         custom_id: "POL_AUDIT_ORPHAN_001",
         supplementary_data: { related_ids: { order_id: orphanOrderId } }
-      },
-      _test_mock_verified: true
+      }
     })
   };
 
@@ -172,7 +179,10 @@ test("GATE AN: Retransmission of already durably committed webhook returns HTTP 
     httpMethod: "POST",
     headers: {
       "paypal-transmission-id": "TX-DURABLE-COMMITTED-RETRY-005",
-      "paypal-transmission-time": "2026-10-28T21:10:00Z"
+      "paypal-transmission-time": "2026-10-28T21:10:00Z",
+      "paypal-transmission-sig": "test_sig_mock",
+      "paypal-cert-url": "https://api.sandbox.paypal.com/v1/cert",
+      "paypal-auth-algo": "SHA256withRSA"
     },
     body: JSON.stringify({
       id: "WH-EVT-COMMITTED-005",
@@ -182,8 +192,7 @@ test("GATE AN: Retransmission of already durably committed webhook returns HTTP 
         status: "COMPLETED",
         amount: { value: "19.00", currency_code: "USD" },
         custom_id: "POL_AUDIT_005"
-      },
-      _test_mock_verified: true
+      }
     })
   };
 
@@ -200,4 +209,3 @@ test("GATE AN: Retransmission of already durably committed webhook returns HTTP 
   assert.equal(data2.status, "ALREADY_PROCESSED_IDEMPOTENT_OK");
   assert.equal(data2.transmission_id, "TX-DURABLE-COMMITTED-RETRY-005");
 });
-
