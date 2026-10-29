@@ -27,6 +27,12 @@ fi
 cmd_start() {
   echo "=== [VELQIRIS] Starting Services ==="
   
+  # 0. Ensure Node.js dependencies
+  if ! NODE_PATH="$BASE_DIR/node_modules:$BASE_DIR/../node_modules" node -e 'require("pg")' 2>/dev/null; then
+    echo "[*] Node dependencies ('pg') missing. Installing dependencies via npm install..."
+    npm --prefix "$BASE_DIR" install
+  fi
+
   # 1. Start PostgreSQL Container
   if [ -x "$DOCKER_BIN" ]; then
     echo "[*] Ensuring PostgreSQL container 'velqiris-postgres' is active..."
@@ -187,6 +193,10 @@ except Exception:
 
 cmd_test() {
   echo "=== [VELQIRIS] Executing Essential Verification Tests ==="
+  if ! NODE_PATH="$BASE_DIR/node_modules:$BASE_DIR/../node_modules" node -e 'require("pg")' 2>/dev/null; then
+    echo "[*] Node dependencies ('pg') missing. Installing dependencies via npm install..."
+    npm --prefix "$BASE_DIR" install
+  fi
   NODE_PATH="$BASE_DIR/node_modules:$BASE_DIR/../node_modules" node "$BASE_DIR/scripts/audit_test_suite.js"
 }
 
