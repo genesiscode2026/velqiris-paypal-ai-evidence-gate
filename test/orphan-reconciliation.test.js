@@ -2,11 +2,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createWebhookHandler } = require("../netlify/functions/paypal-webhook");
 const { handler: workerHandler } = require("../netlify/functions/reconcile-worker");
-const { MemoryStorageAdapter } = require("../netlify/functions/storage-adapter");
+const { MemoryStorageAdapter, storage } = require("../netlify/functions/storage-adapter");
 
-// Programmatic test harness handler with injected verifier (no HTTP-controllable bypass)
+// Programmatic test harness handler with injected verifier and tokenSecret
 const webhookHandler = createWebhookHandler({
-  verifier: async () => ({ ok: true, method: "LOCAL_TEST_HARNESS_VERIFIED" })
+  verifier: async () => ({ ok: true, method: "LOCAL_TEST_HARNESS_VERIFIED" }),
+  tokenSecret: "TEST_SECRET_RECON_98765"
 });
 
 test("GATE W: Orphan Webhook arrives before local order creation -> returns 202 PENDING_RECONCILIATION without delivery token", async () => {
@@ -175,6 +176,18 @@ test("GATE X: Asynchronous Worker leases and completes transactional outbox item
 });
 
 test("GATE AN: Retransmission of already durably committed webhook returns HTTP 200 ALREADY_PROCESSED_IDEMPOTENT_OK", async () => {
+  const orderId = "ORD-COMMITTED-005";
+  await storage.createPayPalOrder({
+    order_id: orderId,
+    intent_id: "INTENT-005",
+    mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
+    merchant_id: "528WKSF7HVQHA",
+    amount_usd: 19.00,
+    currency: "USD",
+    custom_id: "POL_AUDIT_005",
+    status: "CREATED"
+  });
+
   const req = {
     httpMethod: "POST",
     headers: {
@@ -191,7 +204,8 @@ test("GATE AN: Retransmission of already durably committed webhook returns HTTP 
         id: "CAP-COMMITTED-005",
         status: "COMPLETED",
         amount: { value: "19.00", currency_code: "USD" },
-        custom_id: "POL_AUDIT_005"
+        custom_id: "POL_AUDIT_005",
+        supplementary_data: { related_ids: { order_id: orderId } }
       }
     })
   };

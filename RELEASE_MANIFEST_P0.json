@@ -69,8 +69,8 @@
     }
   },
   "tests": {
-    "declared_unique": 107,
-    "pass": 107,
+    "declared_unique": 111,
+    "pass": 111,
     "skipped": 0,
     "fail": 0,
     "not_executed": 0,

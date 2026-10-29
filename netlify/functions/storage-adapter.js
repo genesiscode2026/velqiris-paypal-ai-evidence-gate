@@ -428,6 +428,20 @@ class MemoryStorageAdapter {
     return record;
   }
 
+  async getDeliveryAuthorizationByOrder(orderId) {
+    for (const auth of this._tables.delivery_authorizations.values()) {
+      if (auth.order_id === orderId) return auth;
+    }
+    return null;
+  }
+
+  async getDeliveryAuthorizationByCapture(captureId) {
+    for (const auth of this._tables.delivery_authorizations.values()) {
+      if (auth.capture_id === captureId) return auth;
+    }
+    return null;
+  }
+
   async consumeDeliveryAuthorizationAtomic(token, clientIp = "127.0.0.1") {
     const auth = this._tables.delivery_authorizations.get(token);
     if (!auth) {
@@ -1079,6 +1093,22 @@ class PostgresStorageAdapter {
 
       return res.rows[0];
     });
+  }
+
+  async getDeliveryAuthorizationByOrder(orderId) {
+    const res = await this.pool.query(
+      "SELECT * FROM delivery_authorizations WHERE order_id = $1 LIMIT 1",
+      [orderId]
+    );
+    return res.rows[0] || null;
+  }
+
+  async getDeliveryAuthorizationByCapture(captureId) {
+    const res = await this.pool.query(
+      "SELECT * FROM delivery_authorizations WHERE capture_id = $1 LIMIT 1",
+      [captureId]
+    );
+    return res.rows[0] || null;
   }
 
   async consumeDeliveryAuthorizationAtomic(token, clientIp = "127.0.0.1") {

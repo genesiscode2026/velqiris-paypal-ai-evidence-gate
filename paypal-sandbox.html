@@ -563,28 +563,24 @@ async function executeCurrentScenario() {
   const sc = SCENARIOS[currentScenarioId];
   let liveData = null;
 
+  const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const endpoint = isLocalHost
+    ? (window.location.port === "8080" ? "/api/evaluate" : "http://127.0.0.1:8080/api/evaluate")
+    : `${window.location.origin}/.netlify/functions/agentic-procurement`;
+
   try {
-    const endpoints = [
-      "/.netlify/functions/agentic-procurement",
-      "http://127.0.0.1:8080/api/evaluate"
-    ];
-    for (const ep of endpoints) {
-      try {
-        const resp = await fetch(ep, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ scenario: currentScenarioId }),
-        });
-        if (resp.ok) {
-          liveData = await resp.json();
-          break;
-        }
-      } catch (e) {
-        // Try next endpoint or fallback
-      }
+    const resp = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scenario: currentScenarioId }),
+    });
+    if (resp.ok) {
+      liveData = await resp.json();
+    } else {
+      console.warn(`Backend endpoint ${endpoint} returned HTTP ${resp.status}`);
     }
   } catch (err) {
-    console.warn("Backend fetch failed, utilizing deterministic client fallback.", err);
+    console.warn("Backend fetch failed, utilizing deterministic demonstration preview.", err);
   }
 
   runBtn.disabled = false;
@@ -595,8 +591,11 @@ async function executeCurrentScenario() {
     const pol = liveData.policy_verdict;
     const del = liveData.delivery_result;
 
+    const isRealNeural = isLocalHost && ai.engine_mode === "REAL_LOCAL_NEURAL_LLM";
+    const modelDisplayName = isRealNeural ? (ai.model || "qwen2.5:0.5b") : "DETERMINISTIC_MCDA_POLICY_ENGINE";
+
     document.getElementById("ai-badge").className = "pill pill-ok";
-    document.getElementById("ai-badge").textContent = ai.engine_mode || "MCDA Active";
+    document.getElementById("ai-badge").textContent = isRealNeural ? "qwen2.5:0.5b (Neural)" : "DETERMINISTIC_MCDA_POLICY_ENGINE";
 
     document.getElementById("policy-badge").className = pol.approved ? "pill pill-ok" : "pill pill-bad";
     document.getElementById("policy-badge").textContent = pol.approved ? "Approved" : "Fail-Closed";
@@ -611,8 +610,8 @@ async function executeCurrentScenario() {
 
     document.getElementById("ai-rationale").textContent = 
       `[+] LIVE AGENTIC DECISION (${liveData.execution_time_ms} ms):\n` +
-      `Model: ${ai.model || 'qwen2.5:0.5b'}\n` +
-      `Engine Mode: ${ai.engine_mode}\n` +
+      `Model: ${modelDisplayName}\n` +
+      `Engine Mode: ${ai.engine_mode || (isLocalHost ? "LOCAL_EVALUATION" : "CLOUD_SERVERLESS_MCDA")}\n` +
       (ai.inference_latency_ms ? `Neural Inference Latency: ${ai.inference_latency_ms} ms\n` : '') +
       `Status: ${ai.status}\n` +
       `Recommended Offer: ${ai.recommended_offer_id || 'NONE'} (${ai.recommended_vendor || 'N/A'})\n` +
@@ -662,22 +661,22 @@ async function executeCurrentScenario() {
   } else {
     // Offline client fallback
     document.getElementById("ai-badge").className = "pill pill-amber";
-    document.getElementById("ai-badge").textContent = "Offline Preview";
+    document.getElementById("ai-badge").textContent = "BACKEND NOT VERIFIED — DEMONSTRATION PREVIEW";
 
     document.getElementById("policy-badge").className = "pill pill-amber";
-    document.getElementById("policy-badge").textContent = "Offline Simulation";
+    document.getElementById("policy-badge").textContent = "BACKEND NOT VERIFIED";
 
     document.getElementById("paypal-badge").className = "pill pill-bad";
-    document.getElementById("paypal-badge").textContent = "CLIENT-SIDE OFFLINE PREVIEW — BACKEND NOT VERIFIED";
+    document.getElementById("paypal-badge").textContent = "BACKEND NOT VERIFIED — DEMONSTRATION PREVIEW";
 
     document.getElementById("ai-rationale").textContent = 
-      `[!] CLIENT-SIDE OFFLINE PREVIEW — BACKEND NOT VERIFIED\n` +
-      `Notice: Backend API is not connected. Displaying offline client-side specification.\n\n` +
+      `[!] BACKEND NOT VERIFIED — DEMONSTRATION PREVIEW\n` +
+      `Notice: Backend API is unreachable at ${endpoint}. Displaying demonstration preview.\n\n` +
       sc.aiRationale;
 
     document.getElementById("policy-output").textContent = 
-      `[!] CLIENT-SIDE OFFLINE PREVIEW — POLICY GATE SIMULATION\n` +
-      `Notice: Backend policy gate is not connected. Static demonstration rule:\n\n` +
+      `[!] BACKEND NOT VERIFIED — DEMONSTRATION PREVIEW\n` +
+      `Notice: Backend policy gate is unreachable. Static demonstration rule:\n\n` +
       sc.policyVerdict;
 
     document.getElementById("delivery-output").textContent = 

@@ -10,11 +10,15 @@ const assert = require("node:assert/strict");
 const crypto = require("crypto");
 
 const { storage, MemoryStorageAdapter } = require("../netlify/functions/storage-adapter.js");
-const { handler: webhookHandler, setTestVerifier, resetTestVerifier, isValidPayPalCertUrl, computeCrc32 } = require("../netlify/functions/paypal-webhook.js");
+const { handler: publicWebhookHandler, createWebhookHandler, isValidPayPalCertUrl, computeCrc32 } = require("../netlify/functions/paypal-webhook.js");
 const { evaluateProcurement, handler: procurementHandler } = require("../netlify/functions/agentic-procurement.js");
 
-// Initialize programmatic test verifier for test harness (inaccessible via public HTTP)
-setTestVerifier(async () => ({ ok: true, method: "LOCAL_TEST_HARNESS_VERIFIED" }));
+const testSecret = "TEST_SECRET_TOPOLOGY_HARDENING_12345";
+const webhookHandler = createWebhookHandler({
+  verifier: async () => ({ ok: true, method: "LOCAL_TEST_HARNESS_VERIFIED" }),
+  tokenSecret: testSecret,
+  storage
+});
 
 // Reset storage before test suite
 test.beforeEach(() => {
@@ -25,6 +29,18 @@ test.beforeEach(() => {
 // TEST 1: Două instanțe serverless procesează concurent același eveniment
 // ==============================================================================
 test("TEST 1: Două instanțe serverless concurente procesează același webhook (exact 1 reușește, 1 replay 409)", async () => {
+  const orderId = "ORD-CONCURRENT-001";
+  await storage.createPayPalOrder({
+    order_id: orderId,
+    intent_id: "INTENT-CONCURRENT-001",
+    mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
+    merchant_id: "528WKSF7HVQHA",
+    amount_usd: 19.00,
+    currency: "USD",
+    custom_id: "POL_HASH_ATTESTED",
+    status: "CREATED"
+  });
+
   const req = {
     httpMethod: "POST",
     headers: {
@@ -38,7 +54,8 @@ test("TEST 1: Două instanțe serverless concurente procesează același webhook
         id: "CAP-CONCURRENT-001",
         status: "COMPLETED",
         amount: { value: "19.00", currency_code: "USD" },
-        custom_id: "POL_HASH_ATTESTED"
+        custom_id: "POL_HASH_ATTESTED",
+        supplementary_data: { related_ids: { order_id: orderId } }
       }
     })
   };
@@ -56,6 +73,18 @@ test("TEST 1: Două instanțe serverless concurente procesează același webhook
 // TEST 2: Aceeași tranzacție retransmisă cu identificatori diferiți
 // ==============================================================================
 test("TEST 2: Aceeași captură retransmisă cu transmission-id diferit este deduplicată atomic", async () => {
+  const orderId = "4GM55617DD508394F";
+  await storage.createPayPalOrder({
+    order_id: orderId,
+    intent_id: "INTENT-DUPE-002",
+    mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
+    merchant_id: "528WKSF7HVQHA",
+    amount_usd: 19.00,
+    currency: "USD",
+    custom_id: "POL_HASH_002",
+    status: "CREATED"
+  });
+
   // Primul eveniment
   const req1 = {
     httpMethod: "POST",
@@ -69,7 +98,9 @@ test("TEST 2: Aceeași captură retransmisă cu transmission-id diferit este ded
       resource: {
         id: "CAP-DUPE-CHECK-002",
         status: "COMPLETED",
-        amount: { value: "19.00", currency_code: "USD" }
+        amount: { value: "19.00", currency_code: "USD" },
+        custom_id: "POL_HASH_002",
+        supplementary_data: { related_ids: { order_id: orderId } }
       }
     })
   };
@@ -79,7 +110,7 @@ test("TEST 2: Aceeași captură retransmisă cu transmission-id diferit este ded
   // Retransmitere cu alt transmission ID dar același capture_id
   const captureCheck = await storage.recordCaptureAtomic({
     capture_id: "CAP-DUPE-CHECK-002",
-    order_id: "4GM55617DD508394F",
+    order_id: orderId,
     amount_usd: 19.00,
     currency: "USD",
     status: "COMPLETED"
@@ -172,17 +203,15 @@ test("TEST 6: Clientul încearcă să trimită status SETTLEMENT_VERIFIED (respi
 });
 
 // ==============================================================================
-// TEST 7: Webhook conține semnătură invalidă
+// TEST 7: Webhook conține semnătură invalidă sau netestată (Fail-Closed 401)
 // ==============================================================================
-test("TEST 7: Webhook cu semnătură invalidă sau netestată este respins fail-closed (401)", async () => {
-  resetTestVerifier(); // Clear test verifier to exercise real verification gate
+test("TEST 7: Webhook cu semnătură invalidă este respins fail-closed de handlerul public (401)", async () => {
   const req = {
     httpMethod: "POST",
     headers: {
       "paypal-transmission-id": "TX-FORGED-007",
       "paypal-transmission-time": "2026-10-28T20:00:00Z",
       "paypal-cert-url": "https://api.sandbox.paypal.com/v1/cert"
-      // Attempting client-controlled bypass
     },
     body: JSON.stringify({
       event_type: "PAYMENT.CAPTURE.COMPLETED",
@@ -190,18 +219,143 @@ test("TEST 7: Webhook cu semnătură invalidă sau netestată este respins fail-
       _test_mock_verified: true
     })
   };
-  const res = await webhookHandler(req);
+  const res = await publicWebhookHandler(req);
   assert.equal(res.statusCode, 401);
   const data = JSON.parse(res.body);
   assert.equal(data.error, "CRYPTOGRAPHIC_SIGNATURE_INVALID");
-  // Restore test verifier for remaining unit tests
-  setTestVerifier(async () => ({ ok: true, method: "LOCAL_TEST_HARNESS_VERIFIED" }));
+});
+
+test("TEST 7B: Missing HMAC secret fails closed with HTTP 500 SERVER_CONFIGURATION_ERROR", async () => {
+  const handlerWithoutSecret = createWebhookHandler({
+    verifier: async () => ({ ok: true }),
+    tokenSecret: "",
+    storage
+  });
+  const req = {
+    httpMethod: "POST",
+    headers: {
+      "paypal-transmission-id": "TX-NOSECRET-001",
+      "paypal-transmission-time": "2026-10-28T20:00:00Z"
+    },
+    body: JSON.stringify({ event_type: "PAYMENT.CAPTURE.COMPLETED" })
+  };
+  const res = await handlerWithoutSecret(req);
+  assert.equal(res.statusCode, 500);
+  const data = JSON.parse(res.body);
+  assert.equal(data.error, "SERVER_CONFIGURATION_ERROR");
+});
+
+test("TEST 7C: Webhook without resolvable order ID is quarantined to DLQ and returns 422", async () => {
+  const req = {
+    httpMethod: "POST",
+    headers: {
+      "paypal-transmission-id": "TX-NO-ORDERID-001",
+      "paypal-transmission-time": "2026-10-28T20:00:00Z"
+    },
+    body: JSON.stringify({
+      id: "WH-NO-ORDERID",
+      event_type: "PAYMENT.CAPTURE.COMPLETED",
+      resource: {
+        id: "CAP-NO-ORDERID",
+        status: "COMPLETED",
+        amount: { value: "19.00", currency_code: "USD" }
+      }
+    })
+  };
+  const res = await webhookHandler(req);
+  assert.equal(res.statusCode, 422);
+  const data = JSON.parse(res.body);
+  assert.equal(data.error, "REJECTED_UNRESOLVED_ORDER_IDENTIFIER");
+});
+
+test("TEST 7D: Webhook with custom_id mismatch is rejected (422 REJECTED_CUSTOM_ID_MISMATCH)", async () => {
+  const orderId = "ORD-CUSTOM-MISMATCH-001";
+  await storage.createPayPalOrder({
+    order_id: orderId,
+    intent_id: "INTENT-MISMATCH-001",
+    mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
+    merchant_id: "528WKSF7HVQHA",
+    amount_usd: 19.00,
+    currency: "USD",
+    custom_id: "EXPECTED_HASH_123",
+    status: "CREATED"
+  });
+  const req = {
+    httpMethod: "POST",
+    headers: {
+      "paypal-transmission-id": "TX-CUSTOM-MISMATCH-001",
+      "paypal-transmission-time": "2026-10-28T20:00:00Z"
+    },
+    body: JSON.stringify({
+      id: "WH-CUSTOM-MISMATCH",
+      event_type: "PAYMENT.CAPTURE.COMPLETED",
+      resource: {
+        id: "CAP-CUSTOM-MISMATCH",
+        status: "COMPLETED",
+        amount: { value: "19.00", currency_code: "USD" },
+        custom_id: "FORGED_HASH_999",
+        supplementary_data: { related_ids: { order_id: orderId } }
+      }
+    })
+  };
+  const res = await webhookHandler(req);
+  assert.equal(res.statusCode, 422);
+  const data = JSON.parse(res.body);
+  assert.equal(data.error, "REJECTED_CUSTOM_ID_MISMATCH");
+});
+
+test("TEST 7E: Webhook for order with unauthorized merchant is rejected (422 REJECTED_UNAUTHORIZED_MERCHANT)", async () => {
+  const orderId = "ORD-ROGUE-MERCHANT-001";
+  await storage.createPayPalOrder({
+    order_id: orderId,
+    intent_id: "INTENT-ROGUE-001",
+    mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
+    merchant_id: "ROGUE_MERCHANT_XYZ",
+    amount_usd: 19.00,
+    currency: "USD",
+    custom_id: "POL_AUDIT_ROGUE",
+    status: "CREATED"
+  });
+  const req = {
+    httpMethod: "POST",
+    headers: {
+      "paypal-transmission-id": "TX-ROGUE-MERCHANT-001",
+      "paypal-transmission-time": "2026-10-28T20:00:00Z"
+    },
+    body: JSON.stringify({
+      id: "WH-ROGUE-MERCHANT",
+      event_type: "PAYMENT.CAPTURE.COMPLETED",
+      resource: {
+        id: "CAP-ROGUE-MERCHANT",
+        status: "COMPLETED",
+        amount: { value: "19.00", currency_code: "USD" },
+        custom_id: "POL_AUDIT_ROGUE",
+        supplementary_data: { related_ids: { order_id: orderId } }
+      }
+    })
+  };
+  const res = await webhookHandler(req);
+  assert.equal(res.statusCode, 422);
+  const data = JSON.parse(res.body);
+  assert.equal(data.error, "REJECTED_UNAUTHORIZED_MERCHANT");
 });
 
 // ==============================================================================
 // TEST 8: Webhook este autentic, dar conține sumă greșită (Amount Mismatch)
 // ==============================================================================
 test("TEST 8: Webhook verificat cu sumă modificată ($1.00 în loc de $19.00) este respins (422)", async () => {
+  const orderId = "ORD-TAMPER-008";
+  await storage.createPayPalOrder({
+    order_id: orderId,
+    intent_id: "INTENT-TAMPER-008",
+    mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
+    merchant_id: "528WKSF7HVQHA",
+    amount_usd: 19.00,
+    currency: "USD",
+    custom_id: "POL_AUDIT_008",
+    status: "CREATED"
+  });
+
   const req = {
     httpMethod: "POST",
     headers: {
@@ -214,7 +368,9 @@ test("TEST 8: Webhook verificat cu sumă modificată ($1.00 în loc de $19.00) e
       resource: {
         id: "CAP-TAMPER-008",
         status: "COMPLETED",
-        amount: { value: "1.00", currency_code: "USD" } // Modificat din 19.00 în 1.00!
+        amount: { value: "1.00", currency_code: "USD" },
+        custom_id: "POL_AUDIT_008",
+        supplementary_data: { related_ids: { order_id: orderId } }
       }
     })
   };

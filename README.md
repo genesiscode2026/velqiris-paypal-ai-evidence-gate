@@ -117,7 +117,7 @@ python3 -m unittest discover -s . -p "test_*.py"
 ```bash
 node scripts/audit_test_suite.js
 ```
-**Results:** **107 Unique Tests Declared · 107 PASS · 0 FAIL (100% GREEN in direct environment with Docker running; 89 PASS, 10 PG-dependent, 8 SKIPPED in hermetic sandboxed socket policy).**
+**Results:** **111 Unique Tests Declared · 111 PASS · 0 FAIL (100% GREEN in direct environment with Docker running; 93 PASS, 10 PG-dependent, 8 SKIPPED in hermetic sandboxed socket policy).**
 
 ### Step 3: Stop Services
 ```bash
@@ -155,7 +155,7 @@ flowchart TD
 
 | Official Judging Criterion | Concrete VELQIRIS Evidence | How to Verify |
 | :--- | :--- | :--- |
-| **Technological Implementation** | Real PostgreSQL schema with 12 tables, transactional Outbox/Inbox with row-level leasing (`FOR UPDATE SKIP LOCKED`), asynchronous reconciler daemon, authentic local neural AI model (`qwen2.5:0.5b`), and official PayPal REST v2 Orders integration. 107 audited tests. | Run `./velqiris_services.sh start && node scripts/audit_test_suite.js`. Inspect `schema_postgresql.sql`, `local-reconciler.js`, and `evidence_captures/real_ai_inference_proof.json`. |
+| **Technological Implementation** | Real PostgreSQL schema with 12 tables, transactional Outbox/Inbox with row-level leasing (`FOR UPDATE SKIP LOCKED`), asynchronous reconciler daemon, authentic local neural AI model (`qwen2.5:0.5b`), and official PayPal REST v2 Orders integration. 111 audited tests. | Run `./velqiris_services.sh start && node scripts/audit_test_suite.js`. Inspect `schema_postgresql.sql`, `local-reconciler.js`, and `evidence_captures/real_ai_inference_proof.json`. |
 | **Design** | Coherent end-to-end commercial procurement flow: Mandate definition $\rightarrow$ Multi-criteria AI ranking $\rightarrow$ Deterministic Policy Gate $\rightarrow$ PayPal Order spec locking $\rightarrow$ Reconciled capture $\rightarrow$ Single-use delivery token. Intuitive 6-scenario workbench. | Open `http://127.0.0.1:8080/paypal-sandbox.html` to run interactive scenarios with live telemetry, JSON audit logs, and status transitions. |
 | **Potential Impact** | Solves the fundamental blocker for autonomous agent commerce: unconstrained financial runaway and prompt-injection-induced purchasing. Provides the missing trust infrastructure enabling enterprises to deploy buying agents safely. | Test Scenario 2 (Risk Anomaly, intercepted fail-closed), Scenario 3 (Budget Overrun, intercepted fail-closed), and Scenario 4 (Prompt Injection Defense). |
 | **Innovation / Idea** | Novel *Agentic Commerce Trust Gate* paradigm introducing an immutable cryptographic SHA-256 audit barrier between probabilistic AI reasoning and financial settlement. Dual-mode decision architecture with epistemic uncertainty quantification. | Inspect Layer 3 Policy Gate in `agentic-procurement.js` and mathematical test suite `test_agentic_procurement_engine.py`. |
