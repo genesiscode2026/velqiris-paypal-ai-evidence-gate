@@ -338,6 +338,124 @@ test("TEST 7E: Webhook for order with unauthorized merchant is rejected (422 REJ
   assert.equal(res.statusCode, 422);
   const data = JSON.parse(res.body);
   assert.equal(data.error, "REJECTED_UNAUTHORIZED_MERCHANT");
+  const auth = await storage.getDeliveryAuthorizationByOrder(orderId);
+  assert.equal(auth, null, "Zero delivery token can be issued for unauthorized merchant");
+});
+
+test("TEST 7F: Webhook for order with missing mandate_id is rejected fail-closed (422 REJECTED_MANDATE_BINDING_MISSING)", async () => {
+  const orderId = "ORD-NO-MANDATE-001";
+  await storage.createPayPalOrder({
+    order_id: orderId,
+    intent_id: "INTENT-NO-MANDATE-001",
+    mandate_id: "", // Missing mandate binding
+    merchant_id: "528WKSF7HVQHA",
+    amount_usd: 19.00,
+    currency: "USD",
+    custom_id: "POL_AUDIT_NO_MANDATE",
+    status: "CREATED"
+  });
+  const req = {
+    httpMethod: "POST",
+    headers: {
+      "paypal-transmission-id": "TX-NO-MANDATE-001",
+      "paypal-transmission-time": "2026-10-28T20:00:00Z"
+    },
+    body: JSON.stringify({
+      id: "WH-NO-MANDATE",
+      event_type: "PAYMENT.CAPTURE.COMPLETED",
+      resource: {
+        id: "CAP-NO-MANDATE",
+        status: "COMPLETED",
+        amount: { value: "19.00", currency_code: "USD" },
+        custom_id: "POL_AUDIT_NO_MANDATE",
+        supplementary_data: { related_ids: { order_id: orderId } }
+      }
+    })
+  };
+  const res = await webhookHandler(req);
+  assert.equal(res.statusCode, 422);
+  const data = JSON.parse(res.body);
+  assert.equal(data.error, "REJECTED_MANDATE_BINDING_MISSING");
+  const auth = await storage.getDeliveryAuthorizationByOrder(orderId);
+  assert.equal(auth, null, "Zero delivery token can be issued without mandate binding");
+});
+
+test("TEST 7G: Webhook for order with missing custom_id in stored order is rejected fail-closed (422 REJECTED_CUSTOM_ID_MISSING)", async () => {
+  const orderId = "ORD-NO-CUSTOMID-001";
+  await storage.createPayPalOrder({
+    order_id: orderId,
+    intent_id: "INTENT-NO-CUSTOMID-001",
+    mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
+    merchant_id: "528WKSF7HVQHA",
+    amount_usd: 19.00,
+    currency: "USD",
+    custom_id: "", // Missing custom_id in stored order
+    status: "CREATED"
+  });
+  const req = {
+    httpMethod: "POST",
+    headers: {
+      "paypal-transmission-id": "TX-NO-CUSTOMID-001",
+      "paypal-transmission-time": "2026-10-28T20:00:00Z"
+    },
+    body: JSON.stringify({
+      id: "WH-NO-CUSTOMID",
+      event_type: "PAYMENT.CAPTURE.COMPLETED",
+      resource: {
+        id: "CAP-NO-CUSTOMID",
+        status: "COMPLETED",
+        amount: { value: "19.00", currency_code: "USD" },
+        custom_id: "ATTACKER_PROVIDED_CUSTOM_ID_123", // Attacker supplies custom_id in webhook
+        supplementary_data: { related_ids: { order_id: orderId } }
+      }
+    })
+  };
+  const res = await webhookHandler(req);
+  assert.equal(res.statusCode, 422);
+  const data = JSON.parse(res.body);
+  assert.equal(data.error, "REJECTED_CUSTOM_ID_MISSING");
+  const auth = await storage.getDeliveryAuthorizationByOrder(orderId);
+  assert.equal(auth, null, "Zero delivery token can be issued when stored order lacks policy audit hash");
+});
+
+test("TEST 7H: Webhook with omitted custom_id in PayPal payload succeeds using trusted stored order custom_id", async () => {
+  const orderId = "ORD-OMITTED-PAYPAL-CUSTOMID-001";
+  const trustedHash = "POL_AUDIT_TRUSTED_STORED_HASH_001";
+  await storage.createPayPalOrder({
+    order_id: orderId,
+    intent_id: "INTENT-OMITTED-001",
+    mandate_id: "MANDATE-2026-DIGITAL-REPORT-001",
+    merchant_id: "528WKSF7HVQHA",
+    amount_usd: 19.00,
+    currency: "USD",
+    custom_id: trustedHash,
+    status: "CREATED"
+  });
+  const req = {
+    httpMethod: "POST",
+    headers: {
+      "paypal-transmission-id": "TX-OMITTED-PAYPAL-CUSTOMID-001",
+      "paypal-transmission-time": "2026-10-28T20:00:00Z"
+    },
+    body: JSON.stringify({
+      id: "WH-OMITTED-CUSTOMID",
+      event_type: "PAYMENT.CAPTURE.COMPLETED",
+      resource: {
+        id: "CAP-OMITTED-CUSTOMID",
+        status: "COMPLETED",
+        amount: { value: "19.00", currency_code: "USD" },
+        // custom_id omitted by PayPal protocol
+        supplementary_data: { related_ids: { order_id: orderId } }
+      }
+    })
+  };
+  const res = await webhookHandler(req);
+  assert.equal(res.statusCode, 200);
+  const data = JSON.parse(res.body);
+  assert.equal(data.status, "PAYPAL_SETTLEMENT_VERIFIED");
+  const auth = await storage.getDeliveryAuthorizationByOrder(orderId);
+  assert.ok(auth, "Delivery token must be issued using trusted stored order audit hash");
+  assert.equal(auth.policy_audit_sha256, trustedHash);
 });
 
 // ==============================================================================

@@ -173,13 +173,13 @@ node scripts/run_real_postgres_scenarios.js --scenario 5
 node scripts/run_real_postgres_scenarios.js --scenario 6
 ```
 
-### Complete Test Matrix (111 Unique Tests Declared):
-*(111 PASS, 0 FAIL in direct host environment with Docker PostgreSQL running; 93 PASS, 10 PG-dependent, 8 SKIPPED in hermetic sandboxed socket policy with container stopped)*
+### Complete Test Matrix (114 Unique Tests Declared):
+*(114 PASS, 0 FAIL in direct host environment with Docker PostgreSQL running; 96 PASS, 10 PG-dependent, 8 SKIPPED in hermetic sandboxed socket policy with container stopped)*
 - `test/postgres-real-integration.test.js` (7 tests): Real PostgreSQL connection, 12 tables, transactional rollback, multi-connection concurrency, unique constraint enforcement, Outbox leasing with `FOR UPDATE SKIP LOCKED`, and DLQ quarantine.
 - `test/local-reconciler.test.js` (3 tests): Local reconciler daemon lifecycle, orphan recovery cycle, concurrent disjoint worker leases, and graceful shutdown.
 - `test/orphan-reconciliation.test.js` (5 tests): Webhook arrival before local order, delayed reconciliation, unreconcilable orphan DLQ quarantine, Outbox completion, and HTTP 200 idempotent retransmission acknowledgement.
 - `test/llm-proxy.test.js` (9 tests): 16KB payload limit, client authority tampering defense (HTTP 403), prompt injection rejection (HTTP 400), server auth configuration enforcement (HTTP 503), anonymous live mode gating (HTTP 401), invalid client credential rejection (HTTP 401), authorized fail-closed (HTTP 503), deterministic ranking, and rate limiting (HTTP 429).
-- `test/topology-hardening-15.test.js` (19 tests): Serverless race condition defense, multi-key deduplication, fail-closed storage abort, SSRF cert_url domain whitelisting, single-use token consumption, capture denial/reversal, and fail-closed ingress validation (missing HMAC secret 500, unresolvable order ID 422, custom ID mismatch 422, unauthorized merchant 422).
+- `test/topology-hardening-15.test.js` (22 tests): Serverless race condition defense, multi-key deduplication, fail-closed storage abort, SSRF cert_url domain whitelisting, single-use token consumption, capture denial/reversal, fail-closed ingress validation (missing HMAC secret 500, unresolvable order ID 422, custom ID mismatch 422, unauthorized merchant 422), missing mandate binding fail-closed defense (422 REJECTED_MANDATE_BINDING_MISSING), missing stored custom ID defense (422 REJECTED_CUSTOM_ID_MISSING), and protocol-omitted webhook custom ID resolution using trusted stored order audit hash.
 - `test/agentic-procurement.test.js` & `test/paypal-sandbox.test.js` (9 tests): Serverless function handlers, deterministic MCDA engine mode verification, non-financial simulated settlement separation, zero-leak credential validation, and full scenario simulation.
 - `alexa-simulation.test.js` & `lead-capture.test.js` (2 test suites, 13 checks): Data integrity, consensus pricing, rate limiting, and honeypot protection.
 - `test_paypal_sandbox_client.py` (20 tests): Live OAuth token handling, PayPal REST v2 order payload creation, capture verification, webhook cryptographic signatures, and solvency limits.

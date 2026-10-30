@@ -351,7 +351,22 @@ function createWebhookHandler(options = {}) {
 
     // 5. Complete Mandate & Policy Binding Verification
     // A. Verify associated financial mandate exists and is active
-    const mandateId = storedOrder.mandate_id || "MANDATE-2026-DIGITAL-REPORT-001";
+    // P0-SECURITY: Zero fallback to demo mandate. Mandate must be explicitly bound in stored order.
+    if (!storedOrder.mandate_id || typeof storedOrder.mandate_id !== "string" || storedOrder.mandate_id.trim() === "") {
+      await store.quarantineToDLQ({
+        event_id: eventId,
+        transmission_id: transmissionId,
+        failure_reason: "REJECTED_MANDATE_BINDING_MISSING: Stored order record has no associated mandate ID.",
+        attempt_count: 1,
+        last_error_redacted: "Order record is missing institutional mandate binding."
+      });
+      return reply(422, {
+        error: "REJECTED_MANDATE_BINDING_MISSING",
+        message: "Stored order record has no associated mandate binding. Delivery prohibited."
+      });
+    }
+
+    const mandateId = storedOrder.mandate_id;
     const mandate = await store.getMandate(mandateId);
     if (!mandate || mandate.is_active === false) {
       await store.quarantineToDLQ({
@@ -368,23 +383,24 @@ function createWebhookHandler(options = {}) {
     }
 
     // B. Verify Custom ID / Policy Audit Hash
+    // Stored order is the trusted source of truth for the approved policy audit hash.
     const expectedCustomId = storedOrder.custom_id;
-    const verifiedPolicyHash = eventCustomId || expectedCustomId;
-    if (!verifiedPolicyHash) {
+    if (!expectedCustomId || typeof expectedCustomId !== "string" || expectedCustomId.trim() === "") {
       await store.quarantineToDLQ({
         event_id: eventId,
         transmission_id: transmissionId,
-        failure_reason: "REJECTED_CUSTOM_ID_MISSING: Custom ID policy audit hash is absent in both webhook and order record.",
+        failure_reason: "REJECTED_CUSTOM_ID_MISSING: Stored order record has no immutable policy audit hash.",
         attempt_count: 1,
-        last_error_redacted: "Missing immutable policy audit hash."
+        last_error_redacted: "Missing immutable policy audit hash in stored order."
       });
       return reply(422, {
         error: "REJECTED_CUSTOM_ID_MISSING",
-        message: "Custom ID immutable policy audit hash is missing. Delivery prohibited."
+        message: "Stored order record has no immutable policy audit hash. Delivery prohibited."
       });
     }
 
-    if (expectedCustomId && eventCustomId && eventCustomId !== expectedCustomId) {
+    // If custom_id is provided in the PayPal webhook resource, it MUST match the authorized hash
+    if (eventCustomId && eventCustomId !== expectedCustomId) {
       await store.quarantineToDLQ({
         event_id: eventId,
         transmission_id: transmissionId,
@@ -397,6 +413,9 @@ function createWebhookHandler(options = {}) {
         message: "Custom ID does not match immutable policy audit hash."
       });
     }
+
+    // Trusted policy audit hash from authorized order record
+    const verifiedPolicyHash = expectedCustomId;
 
     // C. Verify Merchant Whitelist
     const merchantId = storedOrder.merchant_id || resource.payee?.merchant_id;
