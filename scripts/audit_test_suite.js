@@ -112,6 +112,13 @@ const TEST_REGISTRY = [
     filePath: "test/local-ai-inference.test.js",
     type: "NODE",
     isRealPostgres: false
+  },
+  // Category 11: PayPal Sandbox Completed Settlement & Proof
+  {
+    category: "PayPal Sandbox Completed Settlement & Proof",
+    filePath: "test/paypal-sandbox-completed-proof.test.js",
+    type: "NODE",
+    isRealPostgres: false
   }
 ];
 

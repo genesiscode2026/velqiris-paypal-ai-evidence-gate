@@ -1,13 +1,13 @@
 # VELQIRIS — PAYPAL AI DEVELOPER SANDBOX VERIFICATION REPORT
 
 > [!NOTE]
-> **HISTORICAL VERIFICATION RECORD:**  
-> This report documents the initial live sandbox order generation milestone. For the complete 98-test topology and production instructions, consult [JUDGE_START_HERE.md](./JUDGE_START_HERE.md).
+> **VERIFICATION RECORD:**
+> This report documents both the initial live Sandbox order initialization (`CREATED`) and the full 6-layer autonomous `COMPLETED` capture + official `PAYMENT.CAPTURE.COMPLETED` webhook + PostgreSQL 16 reconciliation proof ([`evidence_captures/real_paypal_sandbox_completed_proof.json`](./evidence_captures/real_paypal_sandbox_completed_proof.json)). For the complete **117-test** topology and 60-second setup guide, consult [JUDGE_START_HERE.md](./JUDGE_START_HERE.md).
 
-**Target Competition:** PayPal AI Hackathon (Devpost #1225851)  
-**Module:** `competition_submissions/paypal_ai`  
-**API Specification:** PayPal REST API v2 (`https://api-m.sandbox.paypal.com`)  
-**Status:** VERIFIED LIVE IN SANDBOX (20/20 Python Unit Tests Pass · 3/3 Node JS Tests Pass · Live Order Recorded)  
+**Target Competition:** PayPal AI Hackathon (Devpost #1225851)
+**Module:** `competition_submissions/paypal_ai`
+**API Specification:** PayPal REST API v2 & Webhooks API v1 (`https://api-m.sandbox.paypal.com`)
+**Status:** VERIFIED LIVE IN SANDBOX (117/117 Total Tests Pass · Live `CREATED` & `COMPLETED` Orders + Official `WH-...` Webhook Recorded)
 
 ---
 
@@ -22,14 +22,14 @@ In decentralized and AI-driven commercial operations, automated agents frequentl
 
 ---
 
-## 2. RECORDED LIVE SANDBOX EXECUTION PROOF
+## 2A. RECORDED LIVE SANDBOX ORDER INITIALIZATION (`CREATED`)
 
-The sandbox flow was executed and recorded against PayPal's live sandbox infrastructure:
+Initial order creation against PayPal's live Developer Sandbox infrastructure:
 
 ```json
 {
   "timestamp": "2026-10-07T22:30:17Z",
-  "client_id": "AU_a8uHBSoecHCVrdKhVdGC_WQuA30Hnmx4O2fBTIL8bzkb_5eMoKZEsdxhWyDbmv_vQsCaiXig38-Y8",
+  "client_id": "[REDACTED_SANDBOX_CLIENT_ID]",
   "app_id": "APP-8PD12437MX953783S",
   "sandbox_merchant_id": "528WKSF7HVQHA",
   "live_order_id": "5LY98372X4704114N",
@@ -39,6 +39,20 @@ The sandbox flow was executed and recorded against PayPal's live sandbox infrast
   "verification_verdict": "VERIFIED_LIVE_ON_PAYPAL_SANDBOX_REST_API"
 }
 ```
+
+---
+
+## 2B. END-TO-END 6-LAYER AUTONOMOUS SANDBOX SETTLEMENT PROOF (`COMPLETED`)
+
+Full unbroken autonomous execution across `Ollama qwen2.5:0.5b` $\rightarrow$ `Policy Gate` $\rightarrow$ `PayPal Sandbox Orders v2 Capture (COMPLETED)` $\rightarrow$ `Official PayPal Webhooks v1 Event (WH-...)` $\rightarrow$ `PostgreSQL 16 Reconciliation` $\rightarrow$ `Single-Use HMAC-SHA256 Token` (strictly **$19.00 virtual PayPal Sandbox test funds; $0.00 real-world currency**):
+
+- **Reproducible Pipeline:** [`scripts/execute_sandbox_completed_settlement.py`](./scripts/execute_sandbox_completed_settlement.py) + [`scripts/reconcile_live_paypal_capture_pg.js`](./scripts/reconcile_live_paypal_capture_pg.js)
+- **Cryptographic Proof Artifact:** [`evidence_captures/real_paypal_sandbox_completed_proof.json`](./evidence_captures/real_paypal_sandbox_completed_proof.json) (`artifact_sha256: c60322c6b547ca99d3d1a37c7eea89d616e1e0d6e426d5ded41b3315c05a3932`)
+- **Bound Policy Audit Hash (`custom_id`):** `GATE_AUTH_f57ed1690bd0ae6b`
+- **Verified Sandbox Order ID:** `0XE44560VW977724D` (`HTTP 201` + `GET HTTP 200`, `status: COMPLETED`, `paypal-debug-id: f854430084fa7`)
+- **Verified Sandbox Capture ID:** `2LE025816J493433W` (`status: COMPLETED`, `final_capture: true`, gross `$19.00`, PayPal fee `$1.04`, net `$17.96` virtual Sandbox USD)
+- **Official PayPal Server Webhook Event:** `WH-1Y8645456N7575209-8AU56827GB856572S` (`PAYMENT.CAPTURE.COMPLETED`, verified via `GET /v1/notifications/webhooks-events`)
+- **PostgreSQL 16 ACID Ledger & Delivery Gate:** Order transitioned `CREATED -> COMPLETED` (`row_version: 2`), `webhook_inbox` marked `PROCESSED`, 1st HMAC token access `DELIVERED_SUCCESS`, 2nd replay rejected (`TOKEN_ALREADY_CONSUMED` / HTTP 410).
 
 ---
 

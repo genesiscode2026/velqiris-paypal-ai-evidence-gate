@@ -1,0 +1,136 @@
+{
+  "proof_metadata": {
+    "title": "VELQIRIS End-to-End Autonomous PayPal Developer Sandbox COMPLETED Settlement Proof",
+    "captured_at_utc": "2026-10-30T19:47:32Z",
+    "api_environment": "https://api-m.sandbox.paypal.com (Official PayPal Developer Sandbox)",
+    "financial_disclosure": "Settled strictly with $19.00 USD fictitious PayPal Developer Sandbox test funds (synthetic Sandbox Visa ending in 2238); $0.00 real-world currency moved.",
+    "registered_webhook_id": "4HN53346UF6053313",
+    "credentials_redacted": true,
+    "artifact_sha256": "c60322c6b547ca99d3d1a37c7eea89d616e1e0d6e426d5ded41b3315c05a3932"
+  },
+  "layer_1_local_neural_ai": {
+    "runtime": "Ollama v0.40.12 (127.0.0.1:11434 loopback)",
+    "model": "qwen2.5:0.5b",
+    "inference_latency_ms": 1912.62,
+    "eval_tokens": 138,
+    "recommended_offer_id": "OFFER-ALPHA-01",
+    "confidence_score": 0.95,
+    "decision_rationale": "The offer from OFFER-ALPHA-01 meets both the enterprise mandate and the risk score criteria. It is compliant with the $25 budget and has a risk score of 8.0, which is within the 30.0 max tolerance. The price is $19.00, which is within the $25 budget. The offer is also compliant with the risk score of 78.5, which is below the 30.0 max tolerance.",
+    "canonical_catalog_enforced": true
+  },
+  "layer_2_deterministic_policy_gate": {
+    "mandate_id": "MANDATE-2026-DIGITAL-REPORT-001",
+    "max_budget_usd": "25.00",
+    "max_tolerable_risk_score": "30.0",
+    "approved": true,
+    "verdict_code": "POLICY_APPROVED_FOR_PAYPAL_SETTLEMENT",
+    "policy_audit_sha256": "f57ed1690bd0ae6b6d4b774dbe5e6474837499677be0b04bf24276557dacb00e",
+    "bound_custom_id": "GATE_AUTH_f57ed1690bd0ae6b",
+    "authorized_amount_usd": "19.00",
+    "authorized_merchant_id": "528WKSF7HVQHA"
+  },
+  "layer_3_paypal_sandbox_completed_settlement": {
+    "oauth2_token_latency_ms": 460.85,
+    "post_orders_v2_http_status": 201,
+    "post_orders_v2_latency_ms": 3638.77,
+    "post_paypal_debug_id": "f467642a80e08",
+    "get_orders_v2_http_status": 200,
+    "get_orders_v2_latency_ms": 929.26,
+    "get_paypal_debug_id": "f854430084fa7",
+    "paypal_request_id": "velqiris-e2e-85d589a28cda4bf8",
+    "order_id": "0XE44560VW977724D",
+    "order_status": "COMPLETED",
+    "intent": "CAPTURE",
+    "create_time": "2026-10-30T19:46:40Z",
+    "update_time": "2026-10-30T19:46:40Z",
+    "payee_merchant_id": "528WKSF7HVQHA",
+    "payee_sandbox_business_email": "sb-wwsnw53204980@business.example.com",
+    "bound_custom_id": "GATE_AUTH_f57ed1690bd0ae6b",
+    "payment_source_card_masked": {
+      "brand": "VISA",
+      "last_digits": "2238",
+      "type": "CREDIT",
+      "sandbox_fictitious_instrument": true
+    },
+    "capture": {
+      "capture_id": "2LE025816J493433W",
+      "status": "COMPLETED",
+      "final_capture": true,
+      "custom_id": "GATE_AUTH_f57ed1690bd0ae6b",
+      "gross_amount_usd": "19.00",
+      "paypal_fee_usd": "1.04",
+      "net_amount_usd": "17.96",
+      "create_time": "2026-10-30T19:46:40Z"
+    }
+  },
+  "layer_4_paypal_official_webhook_event": {
+    "retrieved_via": "GET https://api-m.sandbox.paypal.com/v1/notifications/webhooks-events",
+    "paypal_debug_id": "f3574332dfc54",
+    "poll_attempts": 14,
+    "event": {
+      "id": "WH-1Y8645456N7575209-8AU56827GB856572S",
+      "event_version": "1.0",
+      "create_time": "2026-10-30T19:46:45.075Z",
+      "resource_type": "capture",
+      "resource_version": "2.0",
+      "event_type": "PAYMENT.CAPTURE.COMPLETED",
+      "summary": "Payment completed for $ 19.0 USD",
+      "resource": {
+        "id": "2LE025816J493433W",
+        "status": "COMPLETED",
+        "amount": {
+          "currency_code": "USD",
+          "value": "19.00"
+        },
+        "final_capture": true,
+        "custom_id": "GATE_AUTH_f57ed1690bd0ae6b",
+        "supplementary_data": {
+          "related_ids": {
+            "order_id": "0XE44560VW977724D"
+          }
+        },
+        "create_time": "2026-10-30T19:46:40Z",
+        "update_time": "2026-10-30T19:46:40Z"
+      }
+    }
+  },
+  "layer_5_and_6_postgresql_16_reconciliation_and_delivery_gate": {
+    "reconciled": true,
+    "database_engine": "PostgreSQL 16 (Local Isolated Docker Ledger: velqiris_test_db)",
+    "execution_latency_ms": 215,
+    "order_id": "0XE44560VW977724D",
+    "capture_id": "2LE025816J493433W",
+    "webhook_event_id": "WH-1Y8645456N7575209-8AU56827GB856572S",
+    "transmission_id": "PAYPAL-SANDBOX-LIVE-WH-1Y8645456N7575209-8AU56827GB856572S",
+    "bound_custom_id": "GATE_AUTH_f57ed1690bd0ae6b",
+    "order_state_transition": {
+      "pre_reconciliation": "CREATED",
+      "post_reconciliation": "COMPLETED",
+      "row_version": 2
+    },
+    "webhook_inbox_transition": {
+      "initial": "PENDING_RECONCILIATION",
+      "final": "PROCESSED",
+      "payload_sha256": "a317813ba6778393dc3948d11e927f987ccf5769102ff9154242b061d0322020"
+    },
+    "transactional_outbox_dispatched": true,
+    "single_use_delivery_gate": {
+      "token_redacted_prefix": "64318febac9185b2...",
+      "token_sha256_commitment": "497869873ebca6fa02634834e7ba8bca78210a85be19b499244bad516fb379cd",
+      "first_consumption_granted": true,
+      "first_consumption_status": "DELIVERED_SUCCESS",
+      "delivered_artifact_id": "ART-0XE44560VW977724D-1793389652719",
+      "delivered_artifact_sha256": "f101e29fd5709fa1d10b51b579594ece77b79e007b1ae6530f51caa888991241",
+      "second_replay_rejected_http_410": true,
+      "second_replay_error_code": "TOKEN_ALREADY_CONSUMED",
+      "db_is_consumed_flag": true
+    }
+  },
+  "cryptographic_chain_invariants": {
+    "custom_id_identical_across_policy_order_capture_webhook_postgres": true,
+    "order_id_identical_across_paypal_webhook_postgres": true,
+    "capture_id_identical_across_paypal_webhook_postgres": true,
+    "real_currency_moved_usd": "0.00",
+    "virtual_sandbox_currency_captured_usd": "19.00"
+  }
+}

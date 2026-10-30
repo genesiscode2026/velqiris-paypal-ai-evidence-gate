@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-28T21:42:00Z",
+  "timestamp": "2026-10-30T20:12:00Z",
   "project": "VELQIRIS \u2014 Agentic Commerce Trust Gate",
   "competition": {
     "name": "PayPal AI Hackathon 2026",
@@ -69,8 +69,8 @@
     }
   },
   "tests": {
-    "declared_unique": 114,
-    "pass": 114,
+    "declared_unique": 117,
+    "pass": 117,
     "skipped": 0,
     "fail": 0,
     "not_executed": 0,
@@ -86,20 +86,42 @@
     "proof_artifact": "evidence_captures/real_ai_inference_proof.json",
     "artifact_sha256": "eb6e758dc00f5adb58fdc96d89686439951b5fdfd1a92e8c08117bd0970d030a"
   },
+  "paypal_sandbox_completed_proof": {
+    "environment": "PayPal Developer Sandbox (https://api-m.sandbox.paypal.com)",
+    "status": "VERIFIED_END_TO_END_COMPLETED_SETTLEMENT",
+    "order_id": "0XE44560VW977724D",
+    "order_status": "COMPLETED",
+    "capture_id": "2LE025816J493433W",
+    "capture_status": "COMPLETED",
+    "webhook_event_id": "WH-1Y8645456N7575209-8AU56827GB856572S",
+    "webhook_event_type": "PAYMENT.CAPTURE.COMPLETED",
+    "bound_custom_id": "GATE_AUTH_f57ed1690bd0ae6b",
+    "payee_merchant_id": "528WKSF7HVQHA",
+    "virtual_sandbox_usd": "19.00",
+    "real_currency_usd": "0.00",
+    "proof_artifact": "evidence_captures/real_paypal_sandbox_completed_proof.json",
+    "artifact_sha256": "c60322c6b547ca99d3d1a37c7eea89d616e1e0d6e426d5ded41b3315c05a3932"
+  },
   "video": {
-    "file": "velqiris_paypal_hackathon_final.mp4",
-    "duration_seconds": 172.46,
+    "file": "velqiris_paypal_grand_prize_demo_v3.mp4",
+    "duration_seconds": 157.97,
     "resolution": "1920x1080",
-    "size_bytes": 7118484,
-    "sha256": "645e9ea791bbb6608dacfca4ae25f9990b869efc8b8297208fa73a244aae5c9e",
-    "status": "VERIFIED_AUTHENTIC_MP4"
+    "size_bytes": 73911440,
+    "sha256": "e367671866abda3fb33c64f169e7e66291ac8f897d2b3ef5a0645f4acf724943",
+    "status": "VERIFIED_AUTHENTIC_LIVE_DEMO_MP4"
   },
   "youtube": {
-    "video_id": "JGvCScSTd-c",
-    "url": "https://youtu.be/JGvCScSTd-c",
+    "video_id": "C7KyyEiovCA",
+    "url": "https://youtu.be/C7KyyEiovCA",
     "visibility": "PUBLIC",
     "oembed_status": "200_OK",
     "playability": "OK",
+    "available_heights": [
+      144,
+      360,
+      720,
+      1080
+    ],
     "is_private": false,
     "verified_in_studio": true
   },
@@ -118,8 +140,8 @@
     "project_url": "https://devpost.com/software/velqiris-paypal-ai-evidence-gate",
     "manage_url": "https://devpost.com/submit-to/31302-paypal-ai-hackathon/manage/submissions/1225851-velqiris-agentic-commerce-trust-gate",
     "status": "SUBMITTED (5/5 steps done)",
-    "submission_video_url": "https://youtu.be/JGvCScSTd-c",
-    "embedded_video_id": "JGvCScSTd-c",
+    "submission_video_url": "https://youtu.be/C7KyyEiovCA",
+    "embedded_video_id": "C7KyyEiovCA",
     "confirmed_in_safari": true
   },
   "overall_status": "RELEASE_AND_SUBMISSION_COMPLETE"
