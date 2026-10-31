@@ -35,8 +35,8 @@
 
 6. **What actually uses PayPal?**  
    - Real OAuth2 authentication (`POST /v1/oauth2/token`) against the PayPal Developer Sandbox (`api-m.sandbox.paypal.com`).
-   - Real PayPal Orders v2 creation & autonomous Sandbox capture (`POST /v2/checkout/orders` + `GET /v2/checkout/orders/{id}`, `intent: CAPTURE`), verified both in `CREATED` state (`4GM55617DD508394F`) and full **`COMPLETED` settlement** (`Order 0XE44560VW977724D`, `Capture 2LE025816J493433W`, `$19.00` virtual PayPal Sandbox test funds; `$0.00` real currency) bound to SHA-256 `custom_id` `GATE_AUTH_f57ed1690bd0ae6b`.
-   - Official PayPal Sandbox Webhooks v1 event emission (`WH-1Y8645456N7575209-8AU56827GB856572S`, `PAYMENT.CAPTURE.COMPLETED`) reconciled into PostgreSQL 16 (`evidence_captures/real_paypal_sandbox_completed_proof.json`), alongside registered Webhook ID `4HN53346UF6053313` with SSRF-protected cert URL filtering and RS256 verification.
+   - Real PayPal Orders v2 creation & autonomous Sandbox capture (`POST /v2/checkout/orders` + `GET /v2/checkout/orders/{id}` + `POST /v2/checkout/orders/{id}/capture`, `intent: CAPTURE`), verified both in `CREATED` state (`4GM55617DD508394F`) and full **`COMPLETED` settlement** (`Order 0XE44560VW977724D`, `Capture 2LE025816J493433W`, `$19.00` virtual PayPal Sandbox test funds; `$0.00` real currency) bound to SHA-256 `custom_id` `GATE_AUTH_f57ed1690bd0ae6b`.
+   - Official PayPal Sandbox Webhooks v1 event emission (`WH-1Y8645456N7575209-8AU56827GB856572S`, `PAYMENT.CAPTURE.COMPLETED`) retrieved via PayPal's authoritative Notifications API (`GET /v1/notifications/webhooks-events`) and reconciled into PostgreSQL 16 (`evidence_captures/real_paypal_sandbox_completed_proof.json`), alongside registered Webhook ID `4HN53346UF6053313` with inbound HTTP RS256 verification and SSRF cert URL filtering implemented in `netlify/functions/paypal-webhook.js`.
 
 7. **What is simulated?**  
    - On the public Netlify browser workbench (`velqiris-acquisition.netlify.app/paypal-sandbox.html`), interactive clicks run in `DEMO_LOCAL_SIMULATED_SETTLEMENT` mode (`$0.00` funds) so judges can inspect all 6 scenarios instantly without needing PayPal Sandbox credentials.
@@ -86,9 +86,14 @@ VELQIRIS establishes the architectural boundary necessary for enterprise agentic
 ## 1. What Is This Project?
 **VELQIRIS — Agentic Commerce Trust Gate** is an institutional-grade commercial trust perimeter connecting autonomous AI procurement agents with the **PayPal REST API v2**.
 
-> [!NOTE]
-> **Hosted Demo vs. Full Local Architecture:**  
-> The hosted page ([velqiris-acquisition.netlify.app/paypal-sandbox.html](https://velqiris-acquisition.netlify.app/paypal-sandbox.html)) is a limited PayPal Sandbox preview demonstrating interactive client-side policy evaluation and sandbox order initialization. For the full six-scenario working demo (with persistent PostgreSQL/SQLite storage, background reconciler daemon, and live evaluate API), follow the verification steps below in this repository.
+> [!IMPORTANT]
+> **Three-Way Operational & Settlement Separation:**  
+> 1. **Hosted Netlify Workbench ([velqiris-acquisition.netlify.app/paypal-sandbox.html](https://velqiris-acquisition.netlify.app/paypal-sandbox.html)):**  
+>    A zero-install public web preview demonstrating interactive client-side policy evaluation and sandbox order creation in `DEMO_LOCAL_SIMULATED_SETTLEMENT` mode ($0.00 funds moved) so judges can evaluate all 6 decision scenarios immediately without needing PayPal credentials or Docker.
+> 2. **Historical Authenticated Sandbox Capture (`evidence_captures/real_paypal_sandbox_completed_proof.json`):**  
+>    An authentic end-to-end autonomous run executed directly against live PayPal Developer Sandbox REST APIs (`POST /v2/checkout/orders` + `POST /v2/checkout/orders/{id}/capture`), achieving full **`COMPLETED` settlement** (`Order 0XE44560VW977724D`, `Capture 2LE025816J493433W`, gross `$19.00` virtual Sandbox funds; `$0.00` real capital), with the authoritative `PAYMENT.CAPTURE.COMPLETED` event (`WH-1Y8645456N7575209-8AU56827GB856572S`) retrieved via PayPal's Webhooks-Events API and reconciled into PostgreSQL 16.
+> 3. **Local PostgreSQL 16 & Reconciler Architecture (`./velqiris_services.sh start`):**  
+>    The complete production stack with persistent 12-table relational schema, durable Webhook Inbox/Outbox with row-level leasing (`FOR UPDATE SKIP LOCKED`), asynchronous reconciler daemon, deterministic Policy Gate, and single-use HMAC digital delivery tokens (`HTTP 410` on replay).
 
 Autonomous agents are increasingly authorized to purchase digital assets, compute services, and intelligence feeds. However, existing LLMs are vulnerable to hallucinated spending, over-budget drift, and prompt injection attacks embedded in untrusted vendor listings.
 
