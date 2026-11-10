@@ -89,7 +89,7 @@ tests 3 | pass 3 | fail 0 (3/3 PASS)
 - **File Size:** 7.12 MB.
 - **SHA-256 Checksum:** `645e9ea791bbb6608dacfca4ae25f9990b869efc8b8297208fa73a244aae5c9e`.
 - **Narration:** Studio-grade macOS TTS (Samantha).
-- **Public Video Stream:** `https://youtu.be/JGvCScSTd-c`
+- **Public Video Stream (Current Temporary Submission Link, superseded `JGvCScSTd-c` deleted 2026-11-10):** `https://youtu.be/C7KyyEiovCA` *(canonical file `velqiris_paypal_grand_prize_demo_v3.mp4` verified in `RELEASE_MANIFEST_P0.json`; contact `chitara.trading@proton.me`)*
 
 ### Extracted Evidence Frames:
 1. [`capture_01_scene_1.png`](./evidence_captures/capture_01_scene_1.png)
@@ -102,7 +102,7 @@ tests 3 | pass 3 | fail 0 (3/3 PASS)
 
 ## 5. SUBMISSION INTEGRITY
 
-1. Video published publicly on YouTube: `https://youtu.be/JGvCScSTd-c`.
+1. Video published publicly on YouTube (temporary Devpost #1225851 stream until hackathon deadline / channel migration): `https://youtu.be/C7KyyEiovCA`.
 2. Associated with official Devpost submission #1225851.
 3. Code repository public on GitHub: `https://github.com/genesiscode2026/velqiris-paypal-ai-evidence-gate`.
 4. Verdict: `SUBMISSION_COMPLETE_VERIFIED`.
